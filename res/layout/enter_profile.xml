@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/ScrollView" android:layout_width="fill_parent" android:layout_height="fill_parent" >
+<RelativeLayout android:id="@+id/RelativeLayout01" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:paddingRight="5dp">
+
+<!-- name -->
+<TextView android:layout_alignParentTop="true" android:layout_width="fill_parent"
+	android:id="@+id/NamePrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_name" />
+<EditText android:layout_below="@id/NamePrompt" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:id="@+id/NameEdit" />
+<TextView android:layout_below="@id/NameEdit" android:layout_width="fill_parent"
+	android:id="@+id/HelpText" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_help" android:textStyle="italic" />
+
+<View android:layout_below="@id/HelpText" android:layout_width="fill_parent"
+	android:id="@+id/UrlSeparator" android:background="#888"
+	android:layout_height="2dp" />
+
+<!-- location -->
+<TextView android:layout_below="@id/UrlSeparator" android:layout_width="fill_parent"
+	android:id="@+id/UrlTitle" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_loc_title" android:textSize="24sp" android:textStyle="bold"/>
+<TextView android:layout_below="@id/UrlTitle" android:layout_width="fill_parent"
+	android:id="@+id/UrlHelpText" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_url_help" android:textStyle="italic" />
+<TextView android:layout_below="@id/UrlHelpText" android:layout_width="fill_parent"
+	android:id="@+id/UrlPrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_url" />
+<EditText android:layout_below="@id/UrlPrompt" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:id="@+id/UrlEdit"
+	android:inputType="textUri"/>
+
+<CheckBox android:layout_below="@id/UrlEdit" android:text="@string/enter_profile_fi_needed"
+	android:id="@+id/FiNeededCheck" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" />
+<TextView android:layout_alignBaseline="@+id/FiOrgEdit" android:layout_width="wrap_content"
+	android:id="@+id/FiOrgPrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_fiorg" />
+<EditText android:layout_toRightOf="@id/FiOrgPrompt" android:layout_below="@id/FiNeededCheck"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:id="@id/FiOrgEdit" />
+<TextView android:layout_alignBaseline="@+id/FiIdEdit" android:layout_width="wrap_content"
+	android:id="@+id/FiIdPrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_fiid" />
+<EditText android:layout_alignLeft="@id/FiOrgEdit" android:layout_below="@id/FiOrgEdit"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:id="@id/FiIdEdit" />
+
+<CheckBox android:layout_below="@id/FiIdEdit" android:text="@string/enter_profile_app_needed"
+	android:id="@+id/AppNeededCheck" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" />
+<TextView android:layout_alignBaseline="@+id/AppNameEdit" android:layout_width="wrap_content"
+	android:id="@+id/AppNamePrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_app_name" />
+<EditText android:layout_toRightOf="@id/AppNamePrompt" android:layout_below="@id/AppNeededCheck"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:id="@id/AppNameEdit" />
+<TextView android:layout_alignBaseline="@+id/AppVerEdit" android:layout_width="wrap_content"
+	android:id="@+id/AppVerPrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_app_ver" />
+<EditText android:layout_alignLeft="@id/AppNameEdit" android:layout_below="@id/AppNameEdit"
+	android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:id="@id/AppVerEdit" />
+
+<View android:layout_below="@id/AppVerEdit" android:layout_width="fill_parent"
+	android:id="@+id/AdvSeparator" android:background="#888"
+	android:layout_height="2dp" />
+
+<!-- advanced -->
+<TextView android:layout_below="@id/AdvSeparator" android:layout_width="fill_parent"
+	android:id="@+id/AdvTitle" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_adv_title" android:textSize="24sp" android:textStyle="bold"/>
+<TextView android:layout_below="@id/AdvTitle" android:layout_width="fill_parent"
+	android:id="@+id/AdvHelpText" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_adv_help" android:textStyle="italic" />
+<TextView android:layout_below="@id/AdvHelpText" android:layout_width="fill_parent"
+	android:id="@+id/OfxVersionPrompt" android:layout_height="wrap_content"
+	android:text="@string/enter_profile_ver_title" />
+<Spinner android:layout_below="@id/OfxVersionPrompt" android:id="@+id/OfxVersion"
+	android:prompt="@string/enter_profile_ver_prompt" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" />
+<CheckBox android:layout_below="@id/OfxVersion" android:text="@string/enter_profile_simple_prof"
+	android:id="@+id/SimpleProfCheck" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" />
+
+<View android:layout_below="@id/SimpleProfCheck" android:layout_width="fill_parent"
+	android:id="@+id/EndSeparator" android:background="#888"
+	android:layout_height="2dp" />
+
+<!-- end buttons -->
+<Button android:text="@string/cont" android:layout_below="@id/EndSeparator"
+	android:layout_width="wrap_content" android:id="@+id/OkButton"
+	android:layout_height="wrap_content" android:layout_alignParentLeft="true" />
+<Button android:text="@string/cancel" android:layout_width="wrap_content"
+	android:id="@+id/CancelButton" android:layout_height="wrap_content"
+	android:layout_alignTop="@id/OkButton" android:layout_alignBottom="@id/OkButton"
+	android:layout_alignParentRight="true" />
+
+</RelativeLayout>
+</ScrollView>

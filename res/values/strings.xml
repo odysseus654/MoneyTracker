@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="cont">Continue</string>
+    <string name="app_name">MoneyTracker</string>
+	<string name="add_profile_title">Add an Account...</string>
+	<string name="enter_profile_title">Enter Institution Information</string>
+	<string name="enter_profile_name">Name of this institution:</string>
+	<string name="enter_profile_help">You can often get the following information from your institution by calling their customer service number and asking how to login to their OFX or \&quot;Quicken\&quot; service.</string>
+	<string name="enter_profile_loc_title">Location</string>
+	<string name="enter_profile_url_help">This looks like a website location, it is not your institution\&apos;s home page</string>
+	<string name="enter_profile_url">OFX Url:</string>
+	<string name="enter_profile_fi_needed">My institution requires more info</string>
+	<string name="enter_profile_fiorg">FI Org:</string>
+	<string name="enter_profile_fiid">FI Id:</string>
+	<string name="enter_profile_app_needed">My institution requires a specific client</string>
+	<string name="enter_profile_app_name">Name:</string>
+	<string name="enter_profile_app_ver">Version:</string>
+	<string name="enter_profile_adv_title">Advanced Options</string>
+	<string name="enter_profile_adv_help">You should not need to change these</string>
+	<string name="enter_profile_ver_title">OFX Protocol to use:</string>
+	<string name="enter_profile_ver_prompt">Select OFX Protocol</string>
+	<string-array name="enter_profile_ver_options">
+		<item>Autodetect (default)</item>
+		<item>Force Version 1.X</item>
+		<item>Force Version 2.X</item>
+	</string-array>
+	<string name="enter_profile_simple_prof">Ignore profile (force simple user/pass)</string>
+</resources>
