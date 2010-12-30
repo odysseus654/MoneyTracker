@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.*;
 import android.view.View.*;
 import android.widget.*;
+import android.widget.AdapterView.OnItemSelectedListener;
 
 /**
  * @author Erik
@@ -33,15 +34,18 @@ public class EnterProfile extends Activity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.enter_profile);
 		
-		OfxFiDefinition def = new OfxFiDefinition(savedInstanceState);
-		this.name = def.name;
-		this.fiURL = def.fiURL;
-		this.fiOrg = def.fiOrg;
-		this.fiID = def.fiID;
-		this.appId = def.appId;
-		this.appVer = def.appVer;
-		this.ofxVer = (int) def.ofxVer;
-		this.simpleProf = def.simpleProf;
+		if(savedInstanceState != null)
+		{
+			OfxFiDefinition def = new OfxFiDefinition(savedInstanceState);
+			this.name = def.name;
+			this.fiURL = def.fiURL;
+			this.fiOrg = def.fiOrg;
+			this.fiID = def.fiID;
+			this.appId = def.appId;
+			this.appVer = def.appVer;
+			this.ofxVer = (int) def.ofxVer;
+			this.simpleProf = def.simpleProf;
+		}
 		this.fiNeeded = (this.fiOrg != null) && (this.fiID != null);
 		this.appNeeded = (this.appId != null);
 		if(!this.appNeeded)
@@ -56,8 +60,7 @@ public class EnterProfile extends Activity
 		ofxVer.setAdapter(mAdapter);
 
 		doBindings();
-		enableFI();
-		enableApp();
+		pushData();
 	}
 	
 	private void doBindings()
@@ -135,11 +138,16 @@ public class EnterProfile extends Activity
 			}
 		});
 
-		((Spinner)findViewById(R.id.OfxVersion)).setOnClickListener(new OnClickListener()
+		((Spinner)findViewById(R.id.OfxVersion)).setOnItemSelectedListener(new OnItemSelectedListener()
 		{
-			public void onClick(View v)
+			public void onItemSelected(AdapterView<?> parent, View view, int position, long id) 
 			{
-				ofxVer = ((Spinner)v).getSelectedItemPosition();
+				ofxVer = position;
+			}
+
+			public void onNothingSelected(AdapterView<?> parent)
+			{
+				ofxVer = 0;
 			}
 		});
 
@@ -167,6 +175,23 @@ public class EnterProfile extends Activity
 				finish();
 			}
 		});
+	}
+	
+	private void pushData()
+	{
+		((EditText)findViewById(R.id.NameEdit)).setText(name);
+		((EditText)findViewById(R.id.UrlEdit)).setText(fiURL);
+		((CheckBox)findViewById(R.id.FiNeededCheck)).setChecked(fiNeeded);
+		((EditText)findViewById(R.id.FiOrgEdit)).setText(fiOrg);
+		((EditText)findViewById(R.id.FiIdEdit)).setText(fiID);
+		((CheckBox)findViewById(R.id.AppNeededCheck)).setChecked(appNeeded);
+		((EditText)findViewById(R.id.AppNameEdit)).setText(appId);
+		((EditText)findViewById(R.id.AppVerEdit)).setText(Integer.toString(appVer));
+		((Spinner)findViewById(R.id.OfxVersion)).setSelection(ofxVer);
+		((CheckBox)findViewById(R.id.SimpleProfCheck)).setChecked(simpleProf);
+
+		enableFI();
+		enableApp();
 	}
 	
 	private void enableFI()

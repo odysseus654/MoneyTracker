@@ -12,7 +12,9 @@ public class OfxFiDefinition
 	public int appVer;
 	public float ofxVer;
 	public boolean simpleProf;
-	
+	public String srcName;
+	public String srcId;
+
 	public OfxFiDefinition()
 	{
 	}

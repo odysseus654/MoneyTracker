@@ -146,7 +146,7 @@ public class OfxRequest
 		return null;
 	}
 	
-	private HttpClient buildClient()
+	static private HttpClient buildClient()
 	{
 		// build the schema (we should only be using https here anyhow)
 		SchemeRegistry schemeRegistry = new SchemeRegistry();
