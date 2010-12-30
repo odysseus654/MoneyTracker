@@ -9,10 +9,13 @@ package name.anderson.odysseus.moneytracker.ofx;
  */
 public class StatusResponse
 {
-	public enum StatusTypes { Info, Warn, Error };
+//	public enum StatusTypes { Info, Warn, Error };
+	public static final int ST_INFO = 1;
+	public static final int ST_WARN = 2;
+	public static final int ST_ERROR = 3;
 
 	public int code;
-	public StatusTypes sev;
+	public int sev;
 	public String msg;
 	// currency
 	
@@ -29,15 +32,15 @@ public class StatusResponse
 		{
 			if(statType.equals("INFO"))
 			{
-				this.sev = StatusTypes.Info; 
+				this.sev = ST_INFO; 
 			}
 			else if(statType.equals("WARN"))
 			{
-				this.sev = StatusTypes.Warn;
+				this.sev = ST_WARN;
 			}
 			else if(statType.equals("ERROR"))
 			{
-				this.sev = StatusTypes.Error;
+				this.sev = ST_ERROR;
 			}
 		}
 		

@@ -78,7 +78,7 @@ public class MoneyTrackerEntry extends Activity {
 //        setContentView(R.layout.main);
     }
 
-    private String convertStreamToString(InputStream is) throws IOException
+    private static String convertStreamToString(InputStream is) throws IOException
     {
 	    /*
 	     * To convert the InputStream to String we use the

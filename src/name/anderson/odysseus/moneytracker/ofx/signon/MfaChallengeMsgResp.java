@@ -12,6 +12,7 @@ import name.anderson.odysseus.moneytracker.ofx.*;
  */
 public class MfaChallengeMsgResp extends OfxMessageResp
 {
+/*
 	public static final String mfaPhrases[] =
 	{ 
 		"City of birth",
@@ -37,7 +38,7 @@ public class MfaChallengeMsgResp extends OfxMessageResp
 		"Recent deposit or recent withdrawal amount",
 		"Year of birth, use YYYY"
 	};
-
+*/
 	public List<Challenge> challenges;
 	
 	public static class Challenge

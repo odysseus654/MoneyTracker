@@ -13,13 +13,16 @@ import name.anderson.odysseus.moneytracker.ofx.*;
  */
 public class MsgCoreBlock
 {
-	public enum SyncMode { Full, Lite };
+//	public enum SyncMode { Full, Lite };
+	public static final int SM_FULL = 1;
+	public static final int SM_LITE = 2;
+	
 	public String URL;
 	public boolean securePass;
 	public SignonRealm realm;
 	public String[] langs;
 	public String[] countries;
-	public SyncMode syncMode;
+	public int syncMode;
 	public boolean supportsRefresh;
 	public boolean supportsRecovery;
 	public String SpName;
@@ -64,11 +67,11 @@ public class MsgCoreBlock
 		strValue = in.getAttr("SYNCMODE");
 		if(strValue.equals("FULL"))
 		{
-			this.syncMode = SyncMode.Full;
+			this.syncMode = SM_FULL;
 		}
 		else if(strValue.equals("LITE"))
 		{
-			this.syncMode = SyncMode.Lite;
+			this.syncMode = SM_LITE;
 		}
 
 		strValue = in.getAttr("REFRESHSUPT");

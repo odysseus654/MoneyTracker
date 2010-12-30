@@ -4,11 +4,13 @@ import java.util.Date;
 
 public class BalanceResponse
 {
-	public enum BalanceTypes { Dollar, Percent, Number };
+	public static final int BT_DOLLAR = 1;
+	public static final int BT_PERCENT = 2;
+	public static final int BT_NUMBER = 3;
 
 	public String name;
 	public String descr;
-	public BalanceTypes baltype;
+	public int baltype;
 	public double value;
 	public Date effectiveDate;
 	public CurrencyBlock currency;
@@ -28,15 +30,15 @@ public class BalanceResponse
 		{
 			if(balType.equals("DOLLAR"))
 			{
-				this.baltype = BalanceTypes.Dollar; 
+				this.baltype = BT_DOLLAR; 
 			}
 			else if(balType.equals("PERCENT"))
 			{
-				this.baltype = BalanceTypes.Percent;
+				this.baltype = BT_PERCENT;
 			}
 			else if(balType.equals("NUMBER"))
 			{
-				this.baltype = BalanceTypes.Number;
+				this.baltype = BT_NUMBER;
 			}
 		}
 		

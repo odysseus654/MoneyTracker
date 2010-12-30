@@ -16,7 +16,7 @@ public class UserPassChangeMsgReq extends OfxMessageReq
 
 	public UserPassChangeMsgReq()
 	{
-		super(MessageSet.SIGNON, RequestType.Default, "PINCH");
+		super(MessageSet.SIGNON, "PINCH");
 	}
 
 	protected void populateRequest(TransferObject obj, float msgsetVer)

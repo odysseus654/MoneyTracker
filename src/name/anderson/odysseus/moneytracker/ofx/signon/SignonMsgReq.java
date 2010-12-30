@@ -42,7 +42,7 @@ public class SignonMsgReq extends OfxMessageReq
 	 */
 	public SignonMsgReq()
 	{
-		super(MessageSet.SIGNON, RequestType.Default, "SON");
+		super(MessageSet.SIGNON, "SON");
 		this.lang = "ENG";
 		this.appId = "MONTK";
 		this.appVer = 0.01f;

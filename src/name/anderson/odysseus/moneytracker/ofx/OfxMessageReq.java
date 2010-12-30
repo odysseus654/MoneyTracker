@@ -11,7 +11,7 @@ import java.util.UUID;
  */
 public abstract class OfxMessageReq
 {
-	public enum RequestType { Default, Modify, Delete, Cancel, Inquiry };
+//	public enum RequestType { Default, Modify, Delete, Cancel, Inquiry };
 	public enum MessageSet {
 		SIGNON, SIGNUP, BANK, CREDITCARD, LOAN, INVSTMT, INTERXFER, WIREXFER, BILLPAY,
 		EMAIL, SECLIST, PRESDIR, PRESDLV, PROF, IMAGE
@@ -19,23 +19,23 @@ public abstract class OfxMessageReq
 
 	public final MessageSet messageSet;
 	public final String name;
-	public RequestType type;
+//	public RequestType type;
 	protected UUID trnUid;
 	
 	public OfxMessageReq(MessageSet ms, String n)
 	{
 		this.messageSet = ms;
-		this.type = RequestType.Default;
+//		this.type = RequestType.Default;
 		this.name = n;
 	}
-
+/*
 	public OfxMessageReq(MessageSet ms, RequestType t, String n)
 	{
 		this.messageSet = ms;
 		this.type = t;
 		this.name = n;
 	}
-	
+*/	
 	abstract protected void populateRequest(TransferObject obj, float msgsetVer);
 	abstract public OfxMessageResp processResponse(TransferObject tran, TransferObject obj);
 	

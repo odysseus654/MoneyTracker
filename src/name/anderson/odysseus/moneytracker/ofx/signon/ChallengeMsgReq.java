@@ -16,7 +16,7 @@ public class ChallengeMsgReq extends OfxMessageReq
 
 	public ChallengeMsgReq()
 	{
-		super(MessageSet.SIGNON, RequestType.Default, "CHALLENGE");
+		super(MessageSet.SIGNON, "CHALLENGE");
 	}
 
 	protected void populateRequest(TransferObject obj, float msgsetVer)

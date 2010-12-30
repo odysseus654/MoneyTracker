@@ -7,7 +7,7 @@ public class MfaChallengeMsgReq extends OfxMessageReq
 {
 	public MfaChallengeMsgReq()
 	{
-		super(MessageSet.SIGNON, RequestType.Default, "MFACHALLENGE");
+		super(MessageSet.SIGNON, "MFACHALLENGE");
 	}
 
 	protected void populateRequest(TransferObject obj, float msgsetVer)

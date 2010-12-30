@@ -4,19 +4,27 @@ import name.anderson.odysseus.moneytracker.ofx.*;
 
 public class SignonRealm
 {
-	public enum CharType { Alpha, Numeric, AlphaOrNumeric, AlphaAndNumeric };
-	public enum PassType { Fixed, OneTime, HardwareToken };
+//	public enum CharType { Alpha, Numeric, AlphaOrNumeric, AlphaAndNumeric };
+//	public enum PassType { Fixed, OneTime, HardwareToken };
+	public static final int CT_ALPHA = 1;
+	public static final int CT_NUMERIC = 2;
+	public static final int CT_ALORNUM = 3;
+	public static final int CT_ALANDNUM = 4;
+	
+	public static final int PT_FIXED = 1;
+	public static final int PT_ONETIME = 2;
+	public static final int PT_HWTOKEN = 3;
 	
 	public String name;
 	public int minChars;
 	public int maxChars;
-	public CharType chartype;
+	public int chartype;
 	public boolean caseSensitive;
 	public boolean specialAllowed;
 	public boolean spacesAllowed;
 	public boolean changePassAllowed;
 	public boolean changePassFirst;
-	public PassType passType;
+	public int passType;
 /*
 	public SignonRealm()
 	{
@@ -33,19 +41,19 @@ public class SignonRealm
 		{
 			if(strVal.equals("ALPHAONLY"))
 			{
-				this.chartype = CharType.Alpha;
+				this.chartype = CT_ALPHA;
 			}
 			else if(strVal.equals("NUMERICONLY"))
 			{
-				this.chartype = CharType.Numeric;
+				this.chartype = CT_NUMERIC;
 			}
 			else if(strVal.equals("ALPHAORNUMERIC"))
 			{
-				this.chartype = CharType.AlphaOrNumeric;
+				this.chartype = CT_ALORNUM;
 			}
 			else if(strVal.equals("ALPHAANDNUMERIC"))
 			{
-				this.chartype = CharType.AlphaAndNumeric;
+				this.chartype = CT_ALANDNUM;
 			}
 		}
 
@@ -69,15 +77,15 @@ public class SignonRealm
 		{
 			if(strVal.equals("FIXED"))
 			{
-				this.passType = PassType.Fixed;
+				this.passType = PT_FIXED;
 			}
 			else if(strVal.equals("ONETIME"))
 			{
-				this.passType = PassType.OneTime;
+				this.passType = PT_ONETIME;
 			}
 			else if(strVal.equals("HWTOKEN"))
 			{
-				this.passType = PassType.HardwareToken;
+				this.passType = PT_HWTOKEN;
 			}
 		}
 	}
