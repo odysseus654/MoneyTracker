@@ -6,7 +6,6 @@ package name.anderson.odysseus.moneytracker.prof;
 import java.io.*;
 import java.nio.CharBuffer;
 import java.util.*;
-
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpGet;
@@ -14,6 +13,7 @@ import org.apache.http.conn.scheme.*;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.impl.cookie.*;
 import org.apache.http.params.*;
 
 /**
@@ -24,8 +24,8 @@ public class MoneydanceDefList
 {
 	static HttpClient client = buildClient();
 	static final String MD_LIST = "http://moneydance.com/synch/moneydance/fi2004.dict";
-	public String lastModified;
-	public String etag;
+	public Date lastModified;
+//	public String etag;
 	
 	static private HttpClient buildClient()
 	{
@@ -70,25 +70,79 @@ public class MoneydanceDefList
 		return null;
 	}
 	
-	public List<OfxFiDefinition> getDefList() throws ClientProtocolException, IOException
+	public Reader retrieveDefList() throws ClientProtocolException, IOException
 	{
 		HttpGet get = new HttpGet(MD_LIST);
-		if(this.lastModified != null) get.addHeader("If-Modified-Since", this.lastModified);
-		if(this.etag != null) get.addHeader("If-None-Match", this.etag);
+		if(this.lastModified != null) get.addHeader("If-Modified-Since", DateUtils.formatDate(this.lastModified));
+//		if(this.etag != null) get.addHeader("If-None-Match", this.etag);
 		HttpResponse resp = client.execute(get);
+        StatusLine status = resp.getStatusLine();
+        int statusCode = status.getStatusCode();
+        if(statusCode == 304)
+        {
+        	return null;
+        }
 		String contentType = getSingleHeader(resp, "Content-Type");
-		String encoding = getEncoding(contentType);
-		this.lastModified = getSingleHeader(resp, "Last-Modified");
-		this.etag = getSingleHeader(resp, "ETag");
+		String encoding = null;
+		if(contentType != null) encoding = getEncoding(contentType);
         InputStream entity = resp.getEntity().getContent();
-		Reader reader = null;
+        Reader reader = null;
 		if(encoding == null)
 		{
 			reader = new BufferedReader(new InputStreamReader(entity));
 		} else {
 			reader = new BufferedReader(new InputStreamReader(entity, encoding));
-			
 		}
+        if(statusCode == 200)
+        {
+			String strLastModified = getSingleHeader(resp, "Last-Modified");
+			if(strLastModified != null)
+			{
+				try {
+					this.lastModified = DateUtils.parseDate(strLastModified);
+				}
+				catch(DateParseException e)
+				{
+					this.lastModified = null;
+				}
+			}
+//			this.etag = getSingleHeader(resp, "ETag");
+        	return reader;
+        }
+        else
+        {
+        	String msg = status.getReasonPhrase();
+        	if(msg == null || msg.equals(""))
+        	{
+        		msg = convertStreamToString(reader);
+        	}
+        	throw new HttpResponseException(statusCode, msg);
+        }
+//		is.close();
+	}
+
+    private static String convertStreamToString(Reader reader) throws IOException
+    {
+	    /*
+	     * To convert the InputStream to String we use the
+	     * Reader.read(char[] buffer) method. We iterate until the
+	     * Reader return -1 which means there's no more data to
+	     * read. We use the StringWriter class to produce the string.
+	     */
+    	if (reader == null) return null;
+		Writer writer = new StringWriter();
+
+		char[] buffer = new char[1024];
+		int n;
+		while ((n = reader.read(buffer)) != -1)
+		{
+			writer.write(buffer, 0, n);
+		}
+		return writer.toString();
+	}
+
+    public List<OfxFiDefinition> parseDefList(Reader reader) throws IOException
+	{
 		int state = 0;
 		StringBuffer word = new StringBuffer();
 		String name = null;
