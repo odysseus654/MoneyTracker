@@ -5,6 +5,10 @@
     <string name="cont">Continue</string>
     <string name="app_name">MoneyTracker</string>
 	<string name="add_profile_title">Add an Account...</string>
+	<string-array name="add_profile_options">
+		<item>Search a list of providers</item>
+		<item>Manually enter a provider</item>
+	</string-array>
 	<string name="enter_profile_title">Enter Institution Information</string>
 	<string name="enter_profile_name">Name of this institution:</string>
 	<string name="enter_profile_help">You can often get the following information from your institution by calling their customer service number and asking how to login to their OFX or \&quot;Quicken\&quot; service.</string>
