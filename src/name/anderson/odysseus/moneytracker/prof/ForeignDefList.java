@@ -5,6 +5,7 @@ package name.anderson.odysseus.moneytracker.prof;
 
 import java.io.*;
 import java.util.*;
+
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpGet;
@@ -141,4 +142,5 @@ public abstract class ForeignDefList
 
 	public abstract Reader retrieveDefList() throws Exception;
     public abstract List<OfxFiDefinition> parseDefList(Reader reader) throws Exception;
+    public abstract void sync(List<OfxFiDefinition> defs, OfxFiDefTable db);
 }

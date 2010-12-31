@@ -125,4 +125,9 @@ public class MoneydanceDefList extends ForeignDefList
 		def.srcId = thisDef.get("id");
 		return def;
 	}
+	
+    public void sync(List<OfxFiDefinition> defs, OfxFiDefTable db)
+    {
+    	db.sync(defs, MD_SOURCE, true);
+    }
 }

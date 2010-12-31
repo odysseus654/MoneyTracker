@@ -58,4 +58,9 @@ public class OfxHomeDefList extends ForeignDefList
         }
 		return defList;
 	}
+    
+    public void sync(List<OfxFiDefinition> defs, OfxFiDefTable db)
+    {
+    	db.sync(defs, OH_SOURCE, false);
+    }
 }

@@ -23,11 +23,12 @@ public class OfxFiDefTable
 	private static final int DATABASE_VERSION = 1;
 	private static final String TABLE_NAME = "def";
 	private static final String[] COLS_SRCID = {"src_id"};
+	private static final String[] COLS_LIST = {"_id", "name"};
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
 		private static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME +
-			"( id integer primary key autoincrement, name text not null, " +
+			"( _id integer primary key autoincrement, name text not null, " +
 			"url text not null, fi_org text, fi_id text, app_id text, app_ver integer, " +
 			"ofx_ver float, simple_prof integer, src_name text, src_id text);";
 			
@@ -71,13 +72,13 @@ public class OfxFiDefTable
 			db = dbhelper.getReadableDatabase();
 		}
 	}
-/*	
-	public Cursor openDefs()
+
+	public Cursor defList()
 	{
-		Cursor c = db.query(TABLE_NAME, null, null, null, null, null, "name");
+		Cursor c = db.query(TABLE_NAME, COLS_LIST, null, null, null, null, "name");
 		return c;
 	}
-*/
+
 	private long addDef(OfxFiDefinition def)
 	{
 		ContentValues newValue = new ContentValues();

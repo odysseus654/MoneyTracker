@@ -4,7 +4,7 @@
     <string name="cancel">Cancel</string>
     <string name="cont">Continue</string>
     <string name="app_name">MoneyTracker</string>
-	<string name="add_profile_title">Add an Account...</string>
+	<string name="add_profile_title">Add an Account</string>
 	<string-array name="add_profile_options">
 		<item>Search a list of providers</item>
 		<item>Manually enter a provider</item>
@@ -31,4 +31,5 @@
 		<item>Force Version 2.X</item>
 	</string-array>
 	<string name="enter_profile_simple_prof">Ignore profile (force simple user/pass)</string>
+	<string name="select_profile_title">Select Institution</string>
 </resources>
