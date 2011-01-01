@@ -6,7 +6,7 @@ import android.content.DialogInterface;
 
 public final class ExceptionAlert
 {
-	public static AlertDialog showAlert(Context ctx, Exception e, String msg, String title, DialogInterface.OnClickListener listen)
+	public static AlertDialog buildAlert(Context ctx, Exception e, String msg, String title, DialogInterface.OnClickListener listen)
 	{
 		AlertDialog.Builder dialog = new AlertDialog.Builder(ctx);
 		dialog.setTitle(title);

@@ -22,6 +22,11 @@ public class MoneydanceDefList extends ForeignDefList
 		return retrieveDefList(MD_LIST);
 //		is.close();
 	}
+	
+	public String name()
+	{
+		return "MoneyDance";
+	}
 
     public List<OfxFiDefinition> parseDefList(Reader reader) throws IOException
 	{

@@ -29,7 +29,7 @@ public class OfxFiDefTable
 	{
 		private static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME +
 			"( _id integer primary key autoincrement, name text not null, " +
-			"url text not null, fi_org text, fi_id text, app_id text, app_ver integer, " +
+			"url text, fi_org text, fi_id text, app_id text, app_ver integer, " +
 			"ofx_ver float, simple_prof integer, src_name text, src_id text);";
 			
 		public OfxFiDefOpenHelper(Context context, String name,	CursorFactory factory, int version)
@@ -153,5 +153,11 @@ public class OfxFiDefTable
 			String[] args = { srcName, delDef };
 			db.execSQL("DELETE FROM " + TABLE_NAME + " WHERE src_name=? and src_id=?", args);
 		}
+	}
+
+	public boolean requiresUpdate()
+	{
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

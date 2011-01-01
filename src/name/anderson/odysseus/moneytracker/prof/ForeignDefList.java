@@ -115,9 +115,9 @@ public abstract class ForeignDefList
         	{
         		msg = convertStreamToString(reader);
         	}
+        	reader.close();
         	throw new HttpResponseException(statusCode, msg);
         }
-//		is.close();
 	}
 
     private static String convertStreamToString(Reader reader) throws IOException
@@ -143,4 +143,5 @@ public abstract class ForeignDefList
 	public abstract Reader retrieveDefList() throws Exception;
     public abstract List<OfxFiDefinition> parseDefList(Reader reader) throws Exception;
     public abstract void sync(List<OfxFiDefinition> defs, OfxFiDefTable db);
+	public abstract String name();
 }

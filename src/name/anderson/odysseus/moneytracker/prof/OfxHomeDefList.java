@@ -23,6 +23,11 @@ public class OfxHomeDefList extends ForeignDefList
 //		is.close();
 	}
 
+	public String name()
+	{
+		return "OFXHome";
+	}
+
     public List<OfxFiDefinition> parseDefList(Reader reader) throws IOException, XmlPullParserException
 	{
 		XmlPullParser parser = XmlPullParserFactory.newInstance().newPullParser();

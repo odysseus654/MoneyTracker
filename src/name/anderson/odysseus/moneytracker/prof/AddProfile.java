@@ -38,11 +38,13 @@ public class AddProfile extends ListActivity
 					{
 						Intent browseProf = new Intent(AddProfile.this, SelectProfile.class);
 						startActivityForResult(browseProf, SELECT_PROFILE);
+						break;
 					}
 				case 1:
 					{
 						Intent enterProf = new Intent(AddProfile.this, EnterProfile.class);
 						startActivityForResult(enterProf, SELECT_PROFILE);
+						break;
 					}
 				}
 			}
