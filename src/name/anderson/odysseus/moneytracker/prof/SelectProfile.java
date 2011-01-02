@@ -20,6 +20,7 @@ public class SelectProfile extends ListActivity implements Runnable
 {
 	private static final String[] LIST_COL = { "name" };
 	private static final int[] LIST_IDS = { android.R.id.text1 };
+	private static final int SELECT_PROFILE = 1001;
 	private OfxFiDefTable db;
 	ProgressDialog prog;
 	private Thread updateThread;
@@ -89,24 +90,11 @@ public class SelectProfile extends ListActivity implements Runnable
 		OfxFiDefinition def = retrieveDefFromId(id);
 		if(def != null)
 		{
-			// build this definition into a profile
-			OfxProfile prof = new OfxProfile(def);
-			try {
-				prof.negotiate();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			// TODO
-			int i = 0;
-/*
-			Intent result = new Intent();
+			Intent verifyProf = new Intent(this, VerifyProfile.class);
 			Bundle bdl = new Bundle();
 			def.push(bdl);
-			result.putExtras(bdl);
-			setResult(RESULT_OK, result);
-			finish();
-*/
+			verifyProf.putExtras(bdl);
+			startActivityForResult(verifyProf, SELECT_PROFILE);
 		}
 	}
 
@@ -129,7 +117,7 @@ public class SelectProfile extends ListActivity implements Runnable
 	private void buildView()
 	{
 		Cursor cur = db.defList(null);
-		if(cur != null && !cur.isAfterLast())
+		if(cur.isAfterLast())
 		{
 			SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, cur, LIST_COL, LIST_IDS);
 			adapter.setFilterQueryProvider(new FilterQueryProvider()

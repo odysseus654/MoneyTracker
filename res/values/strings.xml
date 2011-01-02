@@ -33,4 +33,5 @@
 	<string name="enter_profile_simple_prof">Ignore profile (force simple user/pass)</string>
 	<string name="select_profile_title">Select Institution</string>
 	<string name="download_progress">Downloading an updated list of institutions.  This may take a few minutes.</string>
+	<string name="verify_profile_title">Verify Institution</string>
 </resources>

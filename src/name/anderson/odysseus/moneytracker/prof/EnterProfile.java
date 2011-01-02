@@ -5,6 +5,7 @@ package name.anderson.odysseus.moneytracker.prof;
 
 import name.anderson.odysseus.moneytracker.R;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.*;
 import android.view.View.*;
@@ -17,17 +18,21 @@ import android.widget.AdapterView.OnItemSelectedListener;
  */
 public class EnterProfile extends Activity
 {
-	public CharSequence name;
-	public CharSequence fiURL;
-	public boolean fiNeeded;
-	public CharSequence fiOrg;
-	public CharSequence fiID;
-	public boolean appNeeded;
-	public CharSequence appId;
-	public int appVer;
-	public int ofxVer;
-	public boolean simpleProf;
+	private static final int SELECT_PROFILE = 1001;
+	private static final float[] OFX_VERS = { 0.0f, 1.6f, 2.1f };
 
+	private OfxFiDefinition baseDef; 
+	CharSequence name;
+	CharSequence fiURL;
+	boolean fiNeeded;
+	CharSequence fiOrg;
+	CharSequence fiID;
+	boolean appNeeded;
+	CharSequence appId;
+	int appVer;
+	int ofxVer;
+	boolean simpleProf;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -36,15 +41,15 @@ public class EnterProfile extends Activity
 		
 		if(savedInstanceState != null)
 		{
-			OfxFiDefinition def = new OfxFiDefinition(savedInstanceState);
-			this.name = def.name;
-			this.fiURL = def.fiURL;
-			this.fiOrg = def.fiOrg;
-			this.fiID = def.fiID;
-			this.appId = def.appId;
-			this.appVer = def.appVer;
-			this.ofxVer = (int) def.ofxVer;
-			this.simpleProf = def.simpleProf;
+			this.baseDef = new OfxFiDefinition(savedInstanceState);
+			this.name = baseDef.name;
+			this.fiURL = baseDef.fiURL;
+			this.fiOrg = baseDef.fiOrg;
+			this.fiID = baseDef.fiID;
+			this.appId = baseDef.appId;
+			this.appVer = baseDef.appVer;
+			this.ofxVer = (int) baseDef.ofxVer;
+			this.simpleProf = baseDef.simpleProf;
 		}
 		this.fiNeeded = (this.fiOrg != null) && (this.fiID != null);
 		this.appNeeded = (this.appId != null);
@@ -61,6 +66,27 @@ public class EnterProfile extends Activity
 
 		doBindings();
 		pushData();
+	}
+	
+	void profileSelected()
+	{
+		// assemble the profile
+		if(this.baseDef == null) this.baseDef = new OfxFiDefinition();
+		baseDef.name = this.name.toString();
+		baseDef.fiURL = this.fiURL.toString();
+		baseDef.fiOrg = this.fiOrg.toString();
+		baseDef.fiID = this.fiID.toString();
+		baseDef.appId = this.appId.toString();
+		baseDef.appVer = this.appVer;
+		baseDef.ofxVer = OFX_VERS[this.ofxVer];
+		baseDef.simpleProf = this.simpleProf;
+
+		// now chain to the verify step
+		Intent verifyProf = new Intent(EnterProfile.this, VerifyProfile.class);
+		Bundle bdl = new Bundle();
+		this.baseDef.push(bdl);
+		verifyProf.putExtras(bdl);
+		startActivityForResult(verifyProf, SELECT_PROFILE);
 	}
 	
 	private void doBindings()
@@ -163,8 +189,7 @@ public class EnterProfile extends Activity
 		{
 			public void onClick(View v)
 			{
-				// TODO: something!
-				int i = 0;
+				profileSelected();
 			}
 		});
 

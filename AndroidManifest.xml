@@ -10,7 +10,8 @@
 		</activity>
 		<activity android:name=".prof.EnterProfile" android:label="@string/enter_profile_title"></activity>
 		<activity android:name=".prof.SelectProfile" android:label="@string/select_profile_title"></activity>
-	</application>
+	<activity android:name=".prof.VerifyProfile" android:label="@string/verify_profile_title"></activity>
+</application>
 
 	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 	<uses-sdk android:minSdkVersion="4"></uses-sdk>

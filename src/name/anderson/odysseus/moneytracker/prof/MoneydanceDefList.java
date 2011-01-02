@@ -127,6 +127,13 @@ public class MoneydanceDefList extends ForeignDefList
 		if(appVer != null) def.appVer = Integer.parseInt(appVer);
 		def.srcName = MD_SOURCE;
 		def.srcId = thisDef.get("id");
+		
+		// there is way too many uses of "QWIN/1900" here, let's wipe them out and attempt to autodetect
+		if(def.appId != null && def.appId.equals("QWIN") && def.appVer == 1900)
+		{
+			def.appId = null;
+			def.appVer = 0;
+		}
 		return def;
 	}
 	

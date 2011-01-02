@@ -4,11 +4,9 @@
 package name.anderson.odysseus.moneytracker.ofx;
 
 import java.io.*;
-import java.security.cert.Certificate;
+import java.security.cert.*;
 import java.util.*;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
+import javax.net.ssl.*;
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpPost;
@@ -160,7 +158,9 @@ public class OfxRequest
 	//		SSLSocketFactory sockFact = SSLSocketFactory.getSocketFactory();
 			try {
 				this.sockFact = new OfxSSLSocketFactory();
-			} catch (Exception e) { }
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			this.sockFact.setHostnameVerifier(SSLSocketFactory.STRICT_HOSTNAME_VERIFIER);
 			this.registry.register(new Scheme("https", this.sockFact, 443));
 		}
@@ -182,7 +182,7 @@ public class OfxRequest
 		return headers[0].getValue();
 	}
 	
-	public Certificate[] getLastServerCert()
+	public X509Certificate getLastServerCert()
 	{
 		if(this.sockFact == null || this.sockFact.lastSock == null) return null;
 		SSLSession lastSess = this.sockFact.lastSock.getSession();
@@ -192,7 +192,19 @@ public class OfxRequest
 		} catch (SSLPeerUnverifiedException e) {
 			return null;
 		}
-		return certs;
+		if(certs.length == 0)
+		{
+			return null;
+		} else {
+			try
+			{
+				return (X509Certificate)certs[0];
+			}
+			catch(ClassCastException e)
+			{
+				return null;
+			}
+		}
 	}
 
     private static String convertStreamToString(Reader reader) throws IOException

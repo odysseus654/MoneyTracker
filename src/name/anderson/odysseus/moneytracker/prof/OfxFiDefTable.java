@@ -96,7 +96,7 @@ public class OfxFiDefTable
 		Cursor cur = db.query(TABLE_NAME, COLS_DEF, "_id=?", new String[] { Long.toString(id) }, null, null, null);
 		try
 		{
-			if(cur == null || cur.isAfterLast()) return null;
+			if(!cur.moveToNext()) return null;
 			
 			OfxFiDefinition def = new OfxFiDefinition();
 			def.defID = id;
@@ -157,19 +157,15 @@ public class OfxFiDefTable
 		Set<String> vals = new TreeSet<String>();
 		String[] queryArgs = { srcName };
 		Cursor cur = db.query(TABLE_NAME, COLS_SRCID, "src_name=?", queryArgs, null, null, null);
-		if(cur != null && !cur.isAfterLast())
+		while(cur.moveToNext())
 		{
-			do
+			String val = cur.getString(0);
+			if(val != null && !vals.contains(val))
 			{
-				String val = cur.getString(0);
-				if(val != null && !vals.contains(val))
-				{
-					vals.add(val);
-				}
+				vals.add(val);
 			}
-			while(cur.moveToNext());
-			cur.close();
 		}
+		cur.close();
 		
 		for(OfxFiDefinition def : defs)
 		{
@@ -200,7 +196,7 @@ public class OfxFiDefTable
 		Cursor c = defList(null);
 		try
 		{
-			if(c != null && c.isAfterLast()) return true;
+			if(!c.moveToNext()) return true;
 	
 			return false;
 		}

@@ -4,11 +4,11 @@
 package name.anderson.odysseus.moneytracker.ofx;
 
 import java.io.*;
-import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.*;
-
 import org.apache.http.client.HttpResponseException;
 import org.xmlpull.v1.XmlPullParserException;
+
 import name.anderson.odysseus.moneytracker.ofx.OfxMessageReq.MessageSet;
 import name.anderson.odysseus.moneytracker.ofx.prof.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
@@ -38,6 +38,7 @@ public class OfxProfile extends OfxFiDefinition
 	public String  sessCookie;
 	public boolean security;
 	public Date    profAge;
+	public X509Certificate lastCert;
 	
 	final static float DEFAULT_OFX_2x = 2.1f;
 	final static float DEFAULT_OFX_1x = 1.6f;
@@ -74,7 +75,7 @@ public class OfxProfile extends OfxFiDefinition
 
         Reader resp = null;
     	List<OfxMessageResp> response;
-        do {
+        for(;;) {
 	        try {
 	        	resp = req.submit();
 	        }
@@ -101,10 +102,12 @@ public class OfxProfile extends OfxFiDefinition
 	        	// unexpected error or no further actions known
 	        	throw(e);
 	        }
-        } while(false);
 
-        response = req.parseResponse(resp);
-    	Certificate[] certs = req.getLastServerCert();
+	        response = req.parseResponse(resp);
+
+	        break;
+        }
+        this.lastCert = req.getLastServerCert();
         
         // negotiation successful, punch our values
         this.ofxVer = req.version;
