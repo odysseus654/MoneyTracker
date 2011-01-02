@@ -12,7 +12,7 @@ import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.Date;
 import javax.net.ssl.*;
-import name.anderson.odysseus.moneytracker.ExceptionAlert;
+import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
 import org.apache.http.client.*;
@@ -223,7 +223,7 @@ public class VerifyProfile extends Activity implements Runnable
 	{
 		private void doAlert(Exception e, String msg)
 		{
-			AlertDialog dlg = ExceptionAlert.buildAlert(VerifyProfile.this, e, msg, "Negotiation Error", new DialogInterface.OnClickListener()
+			AlertDialog dlg = Utilities.buildAlert(VerifyProfile.this, e, msg, "Negotiation Error", new DialogInterface.OnClickListener()
 			{
 				public void onClick(DialogInterface dialog, int which)
 				{

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 import name.anderson.odysseus.moneytracker.R;
-import name.anderson.odysseus.moneytracker.ExceptionAlert;
+import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
 import android.app.*;
 import android.content.DialogInterface;
@@ -39,7 +39,7 @@ public class SelectProfile extends ListActivity implements Runnable
 		}
 		catch(SQLiteException e)
 		{
-			AlertDialog dlg = ExceptionAlert.buildAlert(this, e, "Unable to open profile store", "Internal Error", new OnClickListener()
+			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to open profile store", "Internal Error", new OnClickListener()
 			{
 				public void onClick(DialogInterface dialog, int which)
 				{
@@ -77,7 +77,7 @@ public class SelectProfile extends ListActivity implements Runnable
 					}
 				}
 			} catch (Exception e) {
-				AlertDialog dlg = ExceptionAlert.buildAlert(SelectProfile.this, e, "Unable to retrieve details", "Download Error", null);
+				AlertDialog dlg = Utilities.buildAlert(SelectProfile.this, e, "Unable to retrieve details", "Download Error", null);
 				dlg.show();
 				return null;
 			}
@@ -193,7 +193,7 @@ public class SelectProfile extends ListActivity implements Runnable
 					ForeignDefList fgnDefList = (ForeignDefList)msgList[0];
 					Exception e = (Exception)msgList[1];
 					strMsg = strMsg + fgnDefList.name();
-					AlertDialog dlg = ExceptionAlert.buildAlert(SelectProfile.this, e, strMsg, "Download Error", null);
+					AlertDialog dlg = Utilities.buildAlert(SelectProfile.this, e, strMsg, "Download Error", null);
 					dlg.show();
 				}
 			}

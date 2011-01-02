@@ -6,6 +6,8 @@ package name.anderson.odysseus.moneytracker.prof;
 import java.io.*;
 import java.util.*;
 
+import name.anderson.odysseus.moneytracker.Utilities;
+
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpGet;
@@ -113,31 +115,11 @@ public abstract class ForeignDefList
         	String msg = status.getReasonPhrase();
         	if(msg == null || msg.equals(""))
         	{
-        		msg = convertStreamToString(reader);
+        		msg = Utilities.convertStreamToString(reader);
         	}
         	reader.close();
         	throw new HttpResponseException(statusCode, msg);
         }
-	}
-
-    private static String convertStreamToString(Reader reader) throws IOException
-    {
-	    /*
-	     * To convert the InputStream to String we use the
-	     * Reader.read(char[] buffer) method. We iterate until the
-	     * Reader return -1 which means there's no more data to
-	     * read. We use the StringWriter class to produce the string.
-	     */
-    	if (reader == null) return null;
-		Writer writer = new StringWriter();
-
-		char[] buffer = new char[1024];
-		int n;
-		while ((n = reader.read(buffer)) != -1)
-		{
-			writer.write(buffer, 0, n);
-		}
-		return writer.toString();
 	}
 
 	public abstract Reader retrieveDefList() throws Exception;
