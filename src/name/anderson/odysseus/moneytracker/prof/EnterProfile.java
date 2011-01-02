@@ -39,18 +39,16 @@ public class EnterProfile extends Activity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.enter_profile);
 		
-		if(savedInstanceState != null)
-		{
-			this.baseDef = new OfxFiDefinition(savedInstanceState);
-			this.name = baseDef.name;
-			this.fiURL = baseDef.fiURL;
-			this.fiOrg = baseDef.fiOrg;
-			this.fiID = baseDef.fiID;
-			this.appId = baseDef.appId;
-			this.appVer = baseDef.appVer;
-			this.ofxVer = (int) baseDef.ofxVer;
-			this.simpleProf = baseDef.simpleProf;
-		}
+		this.baseDef = new OfxFiDefinition(getIntent().getExtras());
+		this.name = baseDef.name;
+		this.fiURL = baseDef.fiURL;
+		this.fiOrg = baseDef.fiOrg;
+		this.fiID = baseDef.fiID;
+		this.appId = baseDef.appId;
+		this.appVer = baseDef.appVer;
+		this.ofxVer = (int) baseDef.ofxVer;
+		this.simpleProf = baseDef.simpleProf;
+
 		this.fiNeeded = (this.fiOrg != null) && (this.fiID != null);
 		this.appNeeded = (this.appId != null);
 		if(!this.appNeeded)

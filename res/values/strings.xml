@@ -3,6 +3,7 @@
     <string name="ok">Ok</string>
     <string name="cancel">Cancel</string>
     <string name="cont">Continue</string>
+    <string name="trustme">I trust this server</string>
     <string name="app_name">MoneyTracker</string>
 	<string name="add_profile_title">Add an Account</string>
 	<string-array name="add_profile_options">
@@ -33,5 +34,18 @@
 	<string name="enter_profile_simple_prof">Ignore profile (force simple user/pass)</string>
 	<string name="select_profile_title">Select Institution</string>
 	<string name="download_progress">Downloading an updated list of institutions.  This may take a few minutes.</string>
-	<string name="verify_profile_title">Verify Institution</string>
+	<string name="verify_profile_title">Do you trust this site to give your info to?</string>
+	<string name="negotiate_progress">Attempting to contact the selected financial institution</string>
+	<string name="verify_profile_cert_help">The following is the <b>verified name</b> of the server you are connecting to, <b>DO NOT CONTINUE</b> if this does not describe your financial institution (or the name is only a web address).</string>
+	<string name="verify_profile_site">Address:</string>
+	<string name="verify_profile_expires">Expires:</string>
+	<string name="verify_profile_issuer">Verified By:</string>
+	<string name="verify_profile_profile_help">The following is provided by the server for informational purposes only and has not been verified.</string>
+	<string name="verify_profile_prof_name">Name:</string>
+	<string name="verify_profile_prof_addr">Address:</string>
+	<string name="verify_profile_prof_csphone">Cust Service:</string>
+	<string name="verify_profile_prof_tsphone">Tech Service:</string>
+	<string name="verify_profile_prof_faxphone">Fax:</string>
+	<string name="verify_profile_prof_url">Web:</string>
+	<string name="verify_profile_prof_email">Email:</string>
 </resources>

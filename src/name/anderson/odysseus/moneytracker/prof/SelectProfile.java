@@ -117,7 +117,7 @@ public class SelectProfile extends ListActivity implements Runnable
 	private void buildView()
 	{
 		Cursor cur = db.defList(null);
-		if(cur.isAfterLast())
+		if(cur.moveToNext())
 		{
 			SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, cur, LIST_COL, LIST_IDS);
 			adapter.setFilterQueryProvider(new FilterQueryProvider()
@@ -203,12 +203,18 @@ public class SelectProfile extends ListActivity implements Runnable
 	@Override
 	public void run()
 	{
-		for(ForeignDefList entry : deflistProviders)
-		{
-			syncForeignDefList(entry);
+		try {
+			for(ForeignDefList entry : deflistProviders)
+			{
+				syncForeignDefList(entry);
+			}
+			errHandler.sendEmptyMessage(0);
+			prog.dismiss();
+		} catch (Throwable e) {
+			// last chance handler
+			e.printStackTrace();
+			//throw(e);
 		}
-		errHandler.sendEmptyMessage(0);
-		prog.dismiss();
 	}
 	
 	private void syncForeignDefList(ForeignDefList fgnDefList)

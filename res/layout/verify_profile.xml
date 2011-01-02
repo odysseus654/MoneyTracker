@@ -2,11 +2,94 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="fill_parent" android:layout_height="fill_parent">
 	
+	<TextView android:layout_width="fill_parent" android:id="@+id/CertHelp"
+		android:layout_height="wrap_content" android:text="@string/verify_profile_cert_help"
+		android:layout_alignParentTop="true" android:textStyle="italic" />
+	<TextView android:layout_width="fill_parent" android:id="@+id/Name"
+		android:layout_height="wrap_content" android:text="'PLACEHOLDER'"
+		android:layout_below="@id/CertHelp" android:textStyle="bold" android:textColor="#0ff" />
+
+	<TableLayout android:layout_below="@id/Name" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:id="@+id/TableLayout">
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_site" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/Site"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" android:textColor="#0ff" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_expires" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/Expires"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" android:textColor="#0ff" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_issuer" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/Issuer"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" android:textColor="#0ff" />
+		</TableRow>
+	</TableLayout>
+	
+	<View android:layout_below="@id/TableLayout" android:layout_width="fill_parent"
+		android:id="@+id/ProfSeparator" android:layout_height="10dp" />
+	<TextView android:layout_width="fill_parent" android:id="@+id/ProfHelp"
+		android:layout_height="wrap_content" android:text="@string/verify_profile_profile_help"
+		android:layout_below="@id/ProfSeparator" android:textStyle="italic"/>
+
+	<TableLayout android:layout_below="@id/ProfHelp" android:layout_width="fill_parent"
+		android:layout_height="wrap_content">
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfNameRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_name" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/ProfName"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfAddrRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_addr" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/ProfAddr"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfCSPhoneRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_csphone" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/ProfCSPhone"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfTSPhoneRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_tsphone" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/TSPhone"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfFaxPhoneRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_faxphone" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/ProfFaxPhone"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfUrlRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_url" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/ProfUrl"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfEmailRow">
+			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+				android:text="@string/verify_profile_prof_email" />
+			<TextView android:layout_width="fill_parent" android:id="@+id/ProfEmail"
+				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
+		</TableRow>
+	</TableLayout>
+
 	<!-- end buttons -->
-	<LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content">
-		<Button android:text="@string/cont" android:layout_width="fill_parent"
+	<LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true">
+		<Button android:text="@string/trustme" android:layout_width="fill_parent"
 			android:id="@+id/OkButton" android:layout_height="wrap_content" android:layout_weight="1" />
 		<Button android:text="@string/cancel" android:layout_width="fill_parent"
 			android:id="@+id/CancelButton" android:layout_height="wrap_content" android:layout_weight="1" />
 	</LinearLayout>
+
 </RelativeLayout>
