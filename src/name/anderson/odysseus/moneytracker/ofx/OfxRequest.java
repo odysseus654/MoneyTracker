@@ -242,12 +242,23 @@ public class OfxRequest
         int statusCode = status.getStatusCode();
 
     	String contentType = getSingleHeader(result, "Content-Type");
-        InputStream entity = result.getEntity().getContent();
+		int semiPos = contentType.indexOf(';');
+		if(semiPos != -1)
+		{
+			contentType = contentType.substring(0, semiPos).trim();
+		}
+
+		InputStream entity = result.getEntity().getContent();
         Reader reader = new BufferedReader(new InputStreamReader(entity));
 
         if(statusCode == 200)
         {
-            return reader;
+        	if(!contentType.equals("application/x-ofx"))
+        	{
+            	throw new HttpResponseException(statusCode, "Unexpected Content-Type " + contentType);
+        	} else {
+        		return reader;
+        	}
         }
         else
         {
