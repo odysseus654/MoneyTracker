@@ -69,7 +69,7 @@ public abstract class ForeignDefList
 		return null;
 	}
 	
-	protected Reader retrieveDefList(String endpoint) throws ClientProtocolException, IOException
+	protected Reader retrievePage(String endpoint) throws ClientProtocolException, IOException
 	{
 		HttpGet get = new HttpGet(endpoint);
 		if(this.lastModified != null) get.addHeader("If-Modified-Since", DateUtils.formatDate(this.lastModified));
@@ -144,4 +144,10 @@ public abstract class ForeignDefList
     public abstract List<OfxFiDefinition> parseDefList(Reader reader) throws Exception;
     public abstract void sync(List<OfxFiDefinition> defs, OfxFiDefTable db);
 	public abstract String name();
+
+	public OfxFiDefinition completeDef(OfxFiDefinition def) throws Exception
+	{
+		// default is to do nothing
+		return def;
+	}
 }

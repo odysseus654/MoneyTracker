@@ -24,6 +24,8 @@ public class OfxFiDefTable
 	private static final String TABLE_NAME = "def";
 	private static final String[] COLS_SRCID = {"src_id"};
 	private static final String[] COLS_LIST = {"_id", "name"};
+	private static final String[] COLS_DEF =
+		{ "name", "url", "fi_org", "fi_id", "app_id", "app_ver", "ofx_ver", "simple_prof", "src_name", "src_id" };
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
@@ -42,12 +44,17 @@ public class OfxFiDefTable
 		{
 			db.execSQL(CREATE_TABLE);
 		}
+		
+		public void wipeTable(SQLiteDatabase db)
+		{
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+			onCreate(db);
+		}
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
 		{
-			db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-			onCreate(db);
+			wipeTable(db);
 		}
 	}
 
@@ -71,12 +78,44 @@ public class OfxFiDefTable
 		{
 			db = dbhelper.getReadableDatabase();
 		}
+//		dbhelper.wipeTable(db);
 	}
 
-	public Cursor defList()
+	public Cursor defList(String constraint)
 	{
-		Cursor c = db.query(TABLE_NAME, COLS_LIST, null, null, null, null, "name");
-		return c;
+		if(constraint == null)
+		{
+			return db.query(TABLE_NAME, COLS_LIST, null, null, null, null, "name");
+		} else {
+			return db.query(TABLE_NAME, COLS_LIST, "name like ?", new String[] { "%" + constraint + "%" }, null, null, "name");
+		}
+	}
+	
+	public OfxFiDefinition getDefById(long id)
+	{
+		Cursor cur = db.query(TABLE_NAME, COLS_DEF, "_id=?", new String[] { Long.toString(id) }, null, null, null);
+		try
+		{
+			if(cur == null || cur.isAfterLast()) return null;
+			
+			OfxFiDefinition def = new OfxFiDefinition();
+			def.name = cur.getString(0);
+			def.fiURL = cur.getString(1);
+			def.fiOrg = cur.getString(2);
+			def.fiID = cur.getString(3);
+			def.appId = cur.getString(4);
+			def.appVer = cur.getInt(5);
+			def.ofxVer = cur.getFloat(6);
+			def.simpleProf = cur.getInt(7) == 1;
+			def.srcName = cur.getString(8);
+			def.srcId = cur.getString(9);
+	
+			return def;
+		}
+		finally
+		{
+			cur.close();
+		}
 	}
 
 	private long addDef(OfxFiDefinition def)
@@ -117,7 +156,7 @@ public class OfxFiDefTable
 		Set<String> vals = new TreeSet<String>();
 		String[] queryArgs = { srcName };
 		Cursor cur = db.query(TABLE_NAME, COLS_SRCID, "src_name=?", queryArgs, null, null, null);
-		if(cur != null)
+		if(cur != null && !cur.isAfterLast())
 		{
 			do
 			{
@@ -157,7 +196,16 @@ public class OfxFiDefTable
 
 	public boolean requiresUpdate()
 	{
-		// TODO Auto-generated method stub
-		return false;
+		Cursor c = defList(null);
+		try
+		{
+			if(c != null && c.isAfterLast()) return true;
+	
+			return false;
+		}
+		finally
+		{
+			c.close();
+		}
 	}
 }

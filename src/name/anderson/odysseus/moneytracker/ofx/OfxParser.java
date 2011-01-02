@@ -83,16 +83,18 @@ class OfxParser
 		int eventType = parser.getEventType();
         while (eventType != XmlPullParser.END_DOCUMENT)
         {
-        	if(eventType == XmlPullParser.START_TAG)
+        	switch(eventType)
         	{
+        	case XmlPullParser.START_TAG:
         		if(currentTag != null)
         		{
         			activeTags.addLast(currentTag);
         		}
         		currentTag = new Pair();
         		currentTag.key = parser.getName();
-        	}
-        	else if(eventType == XmlPullParser.END_TAG)
+        		break;
+        		
+        	case XmlPullParser.END_TAG:
         	{
         		String name = parser.getName();
     			TransferObject thisObj = new TransferObject(name);
@@ -142,9 +144,9 @@ class OfxParser
             		}
             		currentTag.children.add(new TransferObject.ObjValue(thisObj.name, thisObj));
     			}
+    			break;
         	}
-        	else if(eventType == XmlPullParser.TEXT)
-        	{
+        	case XmlPullParser.TEXT:
         		if(currentTag != null)
         		{
 	        		String val = parser.getText();
@@ -162,9 +164,9 @@ class OfxParser
 	    				currentTag.lastPlainToken += val;
 	    			}
         		}
-        	}
-        	else if(eventType == XmlPullParser.CDSECT || eventType == XmlPullParser.ENTITY_REF)
-        	{
+        		break;
+        	case XmlPullParser.CDSECT:
+        	case XmlPullParser.ENTITY_REF:
         		if(currentTag != null)
         		{
 	    			if(currentTag.value == null)
@@ -174,6 +176,7 @@ class OfxParser
 	    			currentTag.value = currentTag.value + parser.getText();
 	    			currentTag.lastPlainToken = null;
         		}
+        		break;
         	}
         	eventType = parser.next();
         }
@@ -197,8 +200,9 @@ class OfxParser
 		int eventType = parser.getEventType();
         while (eventType != XmlPullParser.END_DOCUMENT)
         {
-        	if(eventType == XmlPullParser.START_TAG)
+        	switch(eventType)
         	{
+        	case XmlPullParser.START_TAG:
         		if(lastKey != null)
         		{
         			if(currentObj != null)
@@ -209,9 +213,9 @@ class OfxParser
         		}
         		lastKey = parser.getName();
         		lastValue = null;
-        	}
-        	else if(eventType == XmlPullParser.END_TAG)
-        	{
+        		break;
+
+        	case XmlPullParser.END_TAG:
         		if(currentObj == null)
         		{
         	        throw new XmlPullParserException("OfxParser/v2: parsed an empty document", parser, null);
@@ -245,44 +249,50 @@ class OfxParser
         				currentObj = parent;
         			}
         		}
-        	}
-        	else if(eventType == XmlPullParser.TEXT)
-        	{
-        		String val = parser.getText();
-    			if(lastValue == null)
-    			{
-    				val = cleanHead(val);
-    				if(val.length() > 0)
-    				{
-    					lastValue = val;
-    					lastPlainToken = val;
-    				}
-    			} else {
-    				lastValue = lastValue + val;
-					lastPlainToken = val;
-    			}
-        	}
-        	else if(eventType == XmlPullParser.CDSECT || eventType == XmlPullParser.ENTITY_REF)
-        	{
+        		break;
+
+        	case XmlPullParser.TEXT:
+	        	{
+	        		String val = parser.getText();
+	    			if(lastValue == null)
+	    			{
+	    				val = cleanHead(val);
+	    				if(val.length() > 0)
+	    				{
+	    					lastValue = val;
+	    					lastPlainToken = val;
+	    				}
+	    			} else {
+	    				lastValue = lastValue + val;
+						lastPlainToken = val;
+	    			}
+	    			break;
+	        	}
+
+        	case XmlPullParser.CDSECT:
+        	case XmlPullParser.ENTITY_REF:
     			if(lastValue == null)
     			{
     				lastValue = "";
     			}
     			lastValue = lastValue + parser.getText();
     			lastPlainToken = null;
-        	}
-        	else if(eventType == XmlPullParser.PROCESSING_INSTRUCTION)
-        	{
-        		TransferObject piObj = parseV2Header(parser);
-        		if(piObj != null)
-        		{
-        			if(documentObj != null)
-        			{
-            	        throw new XmlPullParserException("OfxParser/v2: too many <?OFX?> tags in this document", parser, null);
-        			} else {
-        				documentObj = piObj;
-        			}
-        		}
+    			break;
+
+        	case XmlPullParser.PROCESSING_INSTRUCTION:
+	        	{
+	        		TransferObject piObj = parseV2Header(parser);
+	        		if(piObj != null)
+	        		{
+	        			if(documentObj != null)
+	        			{
+	            	        throw new XmlPullParserException("OfxParser/v2: too many <?OFX?> tags in this document", parser, null);
+	        			} else {
+	        				documentObj = piObj;
+	        			}
+	        		}
+	        		break;
+	        	}
         	}
         	eventType = parser.nextToken();
         }

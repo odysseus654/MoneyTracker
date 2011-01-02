@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
 
+import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.ExceptionAlert;
 import android.app.*;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.os.*;
@@ -19,14 +21,16 @@ public class SelectProfile extends ListActivity implements Runnable
 	private static final String[] LIST_COL = { "name" };
 	private static final int[] LIST_IDS = { android.R.id.text1 };
 	private OfxFiDefTable db;
-	private ProgressDialog prog;
+	ProgressDialog prog;
 	private Thread updateThread;
+	ForeignDefList[] deflistProviders;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		db = new OfxFiDefTable(this);
+		deflistProviders = new ForeignDefList[] { new MoneydanceDefList(), new OfxHomeDefList() };
 		
 		try
 		{
@@ -51,15 +55,52 @@ public class SelectProfile extends ListActivity implements Runnable
 		}
 	}
 	
-	private void cancel()
+	void cancel()
 	{
 		setResult(RESULT_CANCELED);
 		finish();
 	}
-		
+
+	private OfxFiDefinition retrieveDefFromId(long id)
+	{
+		OfxFiDefinition def = db.getDefById(id);
+		if(def.srcName != null)
+		{
+			try {
+				for(ForeignDefList entry : deflistProviders)
+				{
+					if(def.srcName.equalsIgnoreCase(entry.name()))
+					{
+						def = entry.completeDef(def);
+						break;
+					}
+				}
+			} catch (Exception e) {
+				AlertDialog dlg = ExceptionAlert.buildAlert(SelectProfile.this, e, "Unable to retrieve details", "Download Error", null);
+				dlg.show();
+				return null;
+			}
+		}
+		return def;
+	}
+
+	void selectDefById(long id)
+	{
+		OfxFiDefinition def = retrieveDefFromId(id);
+		if(def != null)
+		{
+			Intent result = new Intent();
+			Bundle bdl = new Bundle();
+			def.push(bdl);
+			result.putExtras(bdl);
+			setResult(RESULT_OK, result);
+			finish();
+		}
+	}
+
 	private void beginUpdate()
 	{
-		prog = ProgressDialog.show(this, "Downloading institutions", "Downloading an updated list of institutions",
+		prog = ProgressDialog.show(this, null, getString(R.string.download_progress),
 				false, true, new DialogInterface.OnCancelListener()
 		{
 			public void onCancel(DialogInterface dialog)
@@ -75,20 +116,36 @@ public class SelectProfile extends ListActivity implements Runnable
 
 	private void buildView()
 	{
-		Cursor cur = db.defList();
-		SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, cur, LIST_COL, LIST_IDS);
-		setListAdapter(adapter);
-
-		ListView lv = getListView();
-		lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-		lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
+		Cursor cur = db.defList(null);
+		if(cur != null && !cur.isAfterLast())
 		{
-			@Override
-			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
+			SimpleCursorAdapter adapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1, cur, LIST_COL, LIST_IDS);
+			adapter.setFilterQueryProvider(new FilterQueryProvider()
 			{
-				// TODO: something
-			}
-		});
+				public Cursor runQuery(CharSequence constraint)
+				{
+					return db.defList(constraint.toString());
+				}
+			});
+			setListAdapter(adapter);
+	
+			ListView lv = getListView();
+			lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+			lv.setTextFilterEnabled(true);
+			lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
+			{
+				@Override
+				public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
+				{
+					selectDefById(id);
+				}
+			});
+		}
+		else
+		{
+			// TODO: fallback
+			int a = 0;
+		}
 	}
 	
 	@Override
@@ -105,6 +162,7 @@ public class SelectProfile extends ListActivity implements Runnable
 			db.close();
 			db = null;
 		}
+		deflistProviders = null;
 	}
 
 	private Handler errHandler = new Handler()
@@ -145,8 +203,10 @@ public class SelectProfile extends ListActivity implements Runnable
 	@Override
 	public void run()
 	{
-		syncForeignDefList(new MoneydanceDefList());
-		syncForeignDefList(new OfxHomeDefList());
+		for(ForeignDefList entry : deflistProviders)
+		{
+			syncForeignDefList(entry);
+		}
 		errHandler.sendEmptyMessage(0);
 		prog.dismiss();
 	}

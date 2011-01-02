@@ -14,18 +14,17 @@ import org.apache.http.client.ClientProtocolException;
  */
 public class MoneydanceDefList extends ForeignDefList
 {
-	static final String MD_SOURCE = "MONEYDANCE";
+	static final String MD_SOURCE = "MoneyDance";
 	static final String MD_LIST = "http://moneydance.com/synch/moneydance/fi2004.dict";
 	
 	public Reader retrieveDefList() throws ClientProtocolException, IOException
 	{
-		return retrieveDefList(MD_LIST);
-//		is.close();
+		return retrievePage(MD_LIST);
 	}
 	
 	public String name()
 	{
-		return "MoneyDance";
+		return MD_SOURCE;
 	}
 
     public List<OfxFiDefinition> parseDefList(Reader reader) throws IOException
