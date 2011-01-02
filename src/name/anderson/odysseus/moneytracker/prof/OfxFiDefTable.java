@@ -91,7 +91,7 @@ public class OfxFiDefTable
 		}
 	}
 	
-	public OfxFiDefinition getDefById(long id)
+	public OfxFiDefinition getDefById(int id)
 	{
 		Cursor cur = db.query(TABLE_NAME, COLS_DEF, "_id=?", new String[] { Long.toString(id) }, null, null, null);
 		try
@@ -99,6 +99,7 @@ public class OfxFiDefTable
 			if(cur == null || cur.isAfterLast()) return null;
 			
 			OfxFiDefinition def = new OfxFiDefinition();
+			def.defID = id;
 			def.name = cur.getString(0);
 			def.fiURL = cur.getString(1);
 			def.fiOrg = cur.getString(2);

@@ -164,6 +164,7 @@ public class EnterProfile extends Activity
 			public void onClick(View v)
 			{
 				// TODO: something!
+				int i = 0;
 			}
 		});
 

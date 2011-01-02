@@ -3,12 +3,14 @@
  */
 package name.anderson.odysseus.moneytracker.ofx;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.security.*;
+import java.io.*;
+import java.security.cert.Certificate;
 import java.util.*;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import org.apache.http.*;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.*;
 import org.apache.http.conn.ssl.SSLSocketFactory;
@@ -29,6 +31,8 @@ public class OfxRequest
 	public UUID fileUid;
 	protected List<OfxMessageReq> contents;
 	protected OfxProfile profile;
+	private SchemeRegistry registry;
+	private OfxSSLSocketFactory sockFact;
 	
 	public OfxRequest(OfxProfile pro)
 	{
@@ -84,7 +88,7 @@ public class OfxRequest
 		return FormatHeader(this.version) + req.Format(this.version);
 	}
 
-	public HttpResponse submit() throws IOException
+	public Reader submit() throws IOException
 	{
 		SortedMap<String, TransferObject> requests;
 		{
@@ -146,42 +150,72 @@ public class OfxRequest
 		return null;
 	}
 	
-	static private HttpClient buildClient()
+	private HttpClient buildClient()
 	{
 		// build the schema (we should only be using https here anyhow)
-		SchemeRegistry schemeRegistry = new SchemeRegistry();
-		//schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-//		SSLSocketFactory sockFact = SSLSocketFactory.getSocketFactory();
-		SSLSocketFactory sockFact = null;
-		try {
-			sockFact = new OfxSSLSocketFactory();
-		} catch (KeyManagementException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (KeyStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnrecoverableKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(this.registry == null)
+		{
+			this.registry = new SchemeRegistry();
+			//registry(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+	//		SSLSocketFactory sockFact = SSLSocketFactory.getSocketFactory();
+			try {
+				this.sockFact = new OfxSSLSocketFactory();
+			} catch (Exception e) { }
+			this.sockFact.setHostnameVerifier(SSLSocketFactory.STRICT_HOSTNAME_VERIFIER);
+			this.registry.register(new Scheme("https", this.sockFact, 443));
 		}
-		sockFact.setHostnameVerifier(SSLSocketFactory.STRICT_HOSTNAME_VERIFIER);
-		schemeRegistry.register(new Scheme("https", sockFact, 443));
-		
+
 		// sets up parameters
 		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
 		HttpProtocolParams.setContentCharset(params, "utf-8");
 		HttpProtocolParams.setUseExpectContinue(params, true);
 		
-		SingleClientConnManager manager = new SingleClientConnManager(params, schemeRegistry);
+		SingleClientConnManager manager = new SingleClientConnManager(params, this.registry);
 		return new DefaultHttpClient(manager, params);
 	}
 
-	private HttpResponse submit(String endpoint, TransferObject reqObj) throws IOException
+	private static String getSingleHeader(HttpResponse resp, String name)
+	{
+		Header[] headers = resp.getHeaders(name);
+		if(headers == null || headers.length == 0) return null;
+		return headers[0].getValue();
+	}
+	
+	public Certificate[] getLastServerCert()
+	{
+		if(this.sockFact == null || this.sockFact.lastSock == null) return null;
+		SSLSession lastSess = this.sockFact.lastSock.getSession();
+		Certificate[] certs;
+		try {
+			certs = lastSess.getPeerCertificates();
+		} catch (SSLPeerUnverifiedException e) {
+			return null;
+		}
+		return certs;
+	}
+
+    private static String convertStreamToString(Reader reader) throws IOException
+    {
+	    /*
+	     * To convert the InputStream to String we use the
+	     * Reader.read(char[] buffer) method. We iterate until the
+	     * Reader return -1 which means there's no more data to
+	     * read. We use the StringWriter class to produce the string.
+	     */
+    	if (reader == null) return null;
+		Writer writer = new StringWriter();
+
+		char[] buffer = new char[1024];
+		int n;
+		while ((n = reader.read(buffer)) != -1)
+		{
+			writer.write(buffer, 0, n);
+		}
+		return writer.toString();
+	}
+
+	private Reader submit(String endpoint, TransferObject reqObj) throws IOException
 	{
 		HttpClient client = buildClient();
 		HttpPost post = new HttpPost(endpoint);
@@ -191,7 +225,28 @@ public class OfxRequest
 		post.addHeader("Content-type", "application/x-ofx");
 
 		HttpResponse result = client.execute(post);
-		return result;
+
+        StatusLine status = result.getStatusLine();
+        int statusCode = status.getStatusCode();
+
+    	String contentType = getSingleHeader(result, "Content-Type");
+        InputStream entity = result.getEntity().getContent();
+        Reader reader = new BufferedReader(new InputStreamReader(entity));
+
+        if(statusCode == 200)
+        {
+            return reader;
+        }
+        else
+        {
+        	String msg = status.getReasonPhrase();
+        	if(msg == null || msg.equals(""))
+        	{
+        		msg = convertStreamToString(reader);
+        	}
+        	reader.close();
+        	throw new HttpResponseException(statusCode, msg);
+        }
 	}
 
 	private String FormatHeader(float version)
@@ -260,7 +315,7 @@ public class OfxRequest
 		return msgSet;
 	}
 
-	public List<OfxMessageResp> handleResponse(Reader reader) throws XmlPullParserException, IOException
+	public List<OfxMessageResp> parseResponse(Reader reader) throws XmlPullParserException, IOException
 	{
 		TransferObject response;
 		if(this.version < 2.0)

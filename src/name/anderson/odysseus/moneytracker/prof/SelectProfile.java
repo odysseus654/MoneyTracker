@@ -3,9 +3,9 @@ package name.anderson.odysseus.moneytracker.prof;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.List;
-
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.ExceptionAlert;
+import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
 import android.app.*;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -61,7 +61,7 @@ public class SelectProfile extends ListActivity implements Runnable
 		finish();
 	}
 
-	private OfxFiDefinition retrieveDefFromId(long id)
+	private OfxFiDefinition retrieveDefFromId(int id)
 	{
 		OfxFiDefinition def = db.getDefById(id);
 		if(def.srcName != null)
@@ -84,17 +84,29 @@ public class SelectProfile extends ListActivity implements Runnable
 		return def;
 	}
 
-	void selectDefById(long id)
+	void selectDefById(int id)
 	{
 		OfxFiDefinition def = retrieveDefFromId(id);
 		if(def != null)
 		{
+			// build this definition into a profile
+			OfxProfile prof = new OfxProfile(def);
+			try {
+				prof.negotiate();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			// TODO
+			int i = 0;
+/*
 			Intent result = new Intent();
 			Bundle bdl = new Bundle();
 			def.push(bdl);
 			result.putExtras(bdl);
 			setResult(RESULT_OK, result);
 			finish();
+*/
 		}
 	}
 
@@ -137,7 +149,7 @@ public class SelectProfile extends ListActivity implements Runnable
 				@Override
 				public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
 				{
-					selectDefById(id);
+					selectDefById((int)id);
 				}
 			});
 		}

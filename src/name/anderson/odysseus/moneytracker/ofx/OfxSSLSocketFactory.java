@@ -16,7 +16,8 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
  */
 public class OfxSSLSocketFactory extends SSLSocketFactory
 {
-
+	public SSLSocket lastSock;
+	
 	public OfxSSLSocketFactory()
 		throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException
 	{
@@ -45,5 +46,6 @@ public class OfxSSLSocketFactory extends SSLSocketFactory
     		"RC4-SHA", "DES-CBC3-SHA", "EDH-RSA-DES-CBC3-SHA", "EDH-DSS-DES-CBC3-SHA",
     		"DES-CBC-SHA", "EDH-RSA-DES-CBC-SHA", "EDH-DSS-DES-CBC-SHA"	};
     	sock.setEnabledCipherSuites(permittedSuites);
+    	this.lastSock = sock;
 	}
 }

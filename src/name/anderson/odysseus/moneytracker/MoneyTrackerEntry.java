@@ -25,7 +25,7 @@ public class MoneyTrackerEntry extends Activity {
 //        	pro.fiURL = "https://emax.wecu.com/ofx/ofx.dll";
         	pro.fiURL = "https://localhost";
         	pro.appId = "QWIN";
-        	pro.appVer = 19.0f;
+        	pro.appVer = 1900;
 /*        	
         	OfxRequest req = pro.newRequest();
         	ChallengeMsgReq challenge = new ChallengeMsgReq();
@@ -33,7 +33,7 @@ public class MoneyTrackerEntry extends Activity {
         	req.addRequest(challenge);
         	req.security = true;
 */
-	        OfxRequest req = pro.newRequest();
+	        OfxRequest req = pro.newRequest(true);
 	        req.addRequest(pro.newProfRequest());
 /*
 	        HttpResponse resp = req.submit();
@@ -68,7 +68,7 @@ public class MoneyTrackerEntry extends Activity {
         		"<CITY>Bellingham\n<STATE>WA\n<POSTALCODE>98225\n<COUNTRY>USA\n<CSPHONE>360 676 1168\n<FAXPHONE>360 733 5443\n" +
         		"<URL>https://www.wecu.com\n<EMAIL>memberservice@wecu.com\n</PROFRS>\n</PROFTRNRS>\n</PROFMSGSRSV1>\n</OFX>";
         	Reader reader2 = new StringReader(str2);
-        	List<OfxMessageResp> response = req.handleResponse(reader2);
+        	List<OfxMessageResp> response = req.parseResponse(reader2);
 
         	String str4 = "hello";
 			

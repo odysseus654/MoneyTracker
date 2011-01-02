@@ -22,7 +22,7 @@ public class SignonMsgReq extends OfxMessageReq
 	public String lang;
 	public String sessCookie;
 	public String appId;
-	public float appVer;
+	public int appVer;
 	public String clientUid;
 	public String userCred1;
 	public String userCred2;
@@ -45,7 +45,7 @@ public class SignonMsgReq extends OfxMessageReq
 		super(MessageSet.SIGNON, "SON");
 		this.lang = "ENG";
 		this.appId = "MONTK";
-		this.appVer = 0.01f;
+		this.appVer = 1;
 		this.reqUserkey = false;
 	}
 	
@@ -89,7 +89,7 @@ public class SignonMsgReq extends OfxMessageReq
 		}
 		if(this.sessCookie != null) obj.put("SESSCOOKIE", this.sessCookie);
 		obj.put("APPID", this.appId);
-		obj.put("APPVER", String.format("%04d", (int)(this.appVer * 100)));
+		obj.put("APPVER", String.format("%04d", this.appVer));
 		if(this.clientUid != null) obj.put("CLIENTUID", this.clientUid);
 		if(this.userCred1 != null) obj.put("USERCRED1", this.userCred1);
 		if(this.userCred2 != null) obj.put("USERCRED2", this.userCred2);
