@@ -39,6 +39,7 @@ public class OfxProfile extends OfxFiDefinition
 	public boolean security;
 	public Date    profAge;
 	public X509Certificate lastCert;
+	public boolean useExpectContinue;
 	
 	final static float DEFAULT_OFX_2x = 2.1f;
 	final static float DEFAULT_OFX_1x = 1.6f;
@@ -47,21 +48,23 @@ public class OfxProfile extends OfxFiDefinition
 	
 	public OfxProfile()
 	{
+		this.useExpectContinue = true;
 	}
 	
 	public OfxProfile(OfxFiDefinition src)
 	{
-		name = src.name;
-		defID = src.defID;
-		fiURL = src.fiURL;
-		fiOrg = src.fiOrg;
-		fiID = src.fiID;
-		appId = src.appId;
-		appVer = src.appVer;
-		ofxVer = src.ofxVer;
-		simpleProf = src.simpleProf;
-		srcName = src.srcName;
-		srcId = src.srcId;
+		this.useExpectContinue = true;
+		this.name = src.name;
+		this.defID = src.defID;
+		this.fiURL = src.fiURL;
+		this.fiOrg = src.fiOrg;
+		this.fiID = src.fiID;
+		this.appId = src.appId;
+		this.appVer = src.appVer;
+		this.ofxVer = src.ofxVer;
+		this.simpleProf = src.simpleProf;
+		this.srcName = src.srcName;
+		this.srcId = src.srcId;
 	}
 	
 	public void negotiate() throws XmlPullParserException, IOException
@@ -81,8 +84,33 @@ public class OfxProfile extends OfxFiDefinition
 	        }
 	        catch(HttpResponseException e)
 	        {
-	        	if(e.getStatusCode() == 400)
+	        	boolean bIgnoreAndGetOut = false;
+	        	switch(e.getStatusCode())
 	        	{
+	        	case 417: // "Expectation Failed"
+		        	if(req.useExpectContinue)
+		        	{
+		        		// retry without the expect:continue clause
+		        		req.useExpectContinue = false;
+		        		continue;
+		        	}
+		        	break;
+		        	
+	        	case 501: // "Not Implemented"
+	        		// I guess the server understood the request enough to reject it, so it's not a version issue?
+	        		if(son.appId == null)
+	        		{
+	        			// we failed either an explicit version or an autodetect scan, start over with an override app
+	        			son.appId = DEFAULT_APP_ID;
+	        			son.appVer = DEFAULT_APP_VER;
+	        			continue;
+	        		} else {
+	        			// okay, server's not gonna give us a profile.  Let's just continue with what we've got
+	        			bIgnoreAndGetOut = true;
+	        		}
+	        		break;
+
+	        	case 400: // "Bad Request"
 	        		if(this.ofxVer == 0 && req.version == DEFAULT_OFX_2x)
 	        		{
 	        			// 2.x autodetected request failed, let's try 1.x 
@@ -97,13 +125,30 @@ public class OfxProfile extends OfxFiDefinition
 	        			req.version = this.ofxVer == 0 ? DEFAULT_OFX_2x : this.ofxVer;
 	        			continue;
 	        		}
+	        		break;
 	        	}
 	        	
 	        	// unexpected error or no further actions known
-	        	throw(e);
+	        	if(bIgnoreAndGetOut)
+	        	{
+	        		break;
+	        	} else {
+	        		throw(e);
+	        	}
 	        }
 
-	        response = req.parseResponse(resp);
+	        try {
+	        	response = req.parseResponse(resp);
+	        }
+	        catch(XmlPullParserException e)
+	        {
+	        	// did this return a 1.x response to a 2.x query?
+        		if(this.ofxVer == 0 && req.version == DEFAULT_OFX_2x)
+        		{
+        			req.version = DEFAULT_OFX_1x;
+        			continue;
+        		}
+	        }
 
 	        break;
         }

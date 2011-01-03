@@ -43,8 +43,8 @@
 	<string name="verify_profile_profile_help">The following is provided by the server for informational purposes only and has not been verified.</string>
 	<string name="verify_profile_prof_name">Name:</string>
 	<string name="verify_profile_prof_addr">Address:</string>
-	<string name="verify_profile_prof_csphone">Cust Service:</string>
-	<string name="verify_profile_prof_tsphone">Tech Service:</string>
+	<string name="verify_profile_prof_csphone">Cust Support:</string>
+	<string name="verify_profile_prof_tsphone">Tech Support:</string>
 	<string name="verify_profile_prof_faxphone">Fax:</string>
 	<string name="verify_profile_prof_url">Web:</string>
 	<string name="verify_profile_prof_email">Email:</string>

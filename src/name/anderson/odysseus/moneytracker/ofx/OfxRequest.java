@@ -30,6 +30,7 @@ public class OfxRequest
 	public float version;
 	public boolean security;
 	public UUID fileUid;
+	public boolean useExpectContinue;
 	protected List<OfxMessageReq> contents;
 	protected OfxProfile profile;
 	private SchemeRegistry registry;
@@ -37,6 +38,7 @@ public class OfxRequest
 	
 	public OfxRequest(OfxProfile pro)
 	{
+		this.useExpectContinue = pro.useExpectContinue;
 		this.profile = pro;
 		this.version = 0;
 		this.security = false;
@@ -172,7 +174,7 @@ public class OfxRequest
 		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
 		HttpProtocolParams.setContentCharset(params, "utf-8");
-		HttpProtocolParams.setUseExpectContinue(params, true);
+		HttpProtocolParams.setUseExpectContinue(params, this.useExpectContinue);
 		
 		SingleClientConnManager manager = new SingleClientConnManager(params, this.registry);
 		return new DefaultHttpClient(manager, params);
@@ -225,11 +227,14 @@ public class OfxRequest
         int statusCode = status.getStatusCode();
 
     	String contentType = getSingleHeader(result, "Content-Type");
-		int semiPos = contentType.indexOf(';');
-		if(semiPos != -1)
-		{
-			contentType = contentType.substring(0, semiPos).trim();
-		}
+    	if(contentType != null)
+    	{
+			int semiPos = contentType.indexOf(';');
+			if(semiPos != -1)
+			{
+				contentType = contentType.substring(0, semiPos).trim();
+			}
+    	}
 
 		InputStream entity = result.getEntity().getContent();
         Reader reader = new BufferedReader(new InputStreamReader(entity));
