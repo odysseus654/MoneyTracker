@@ -56,10 +56,8 @@ public class OfxRequest
 			= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
 
 		// sort our requests into message sets
-		Iterator<OfxMessageReq> iter = this.contents.iterator();
-		while(iter.hasNext())
+		for(OfxMessageReq req : this.contents)
 		{
-			OfxMessageReq req = iter.next();
 			List<OfxMessageReq> reqList;
 			if(requestSets.containsKey(req.messageSet))
 			{
@@ -81,10 +79,8 @@ public class OfxRequest
 		TransferObject req = new TransferObject("OFX");
 		req.put(signon);
 
-		Iterator<OfxMessageReq.MessageSet> setIter = requestSets.keySet().iterator();
-		while(setIter.hasNext())
+		for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
 		{
-			OfxMessageReq.MessageSet thisSet = setIter.next();
 			req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), this.profile.getMsgsetVer(this.version, thisSet)));
 		}
 
@@ -99,10 +95,8 @@ public class OfxRequest
 				= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
 	
 			// sort our requests into message sets
-			Iterator<OfxMessageReq> iter = this.contents.iterator();
-			while(iter.hasNext())
+			for(OfxMessageReq req : this.contents)
 			{
-				OfxMessageReq req = iter.next();
 				List<OfxMessageReq> reqList;
 				if(requestSets.containsKey(req.messageSet))
 				{
@@ -122,10 +116,8 @@ public class OfxRequest
 //			requestSets.remove(OfxMessageReq.MessageSet.Signon);
 			
 			requests = new TreeMap<String, TransferObject>();
-			Iterator<OfxMessageReq.MessageSet> setIter = requestSets.keySet().iterator();
-			while(setIter.hasNext())
+			for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
 			{
-				OfxMessageReq.MessageSet thisSet = setIter.next();
 				String endpoint = this.profile.getEndpoint(thisSet);
 				if(endpoint == null) return null;
 				float msgsetVer = this.profile.getMsgsetVer(this.version, thisSet);
@@ -143,10 +135,8 @@ public class OfxRequest
 			}
 		}
 
-		Iterator<String> reqIter = requests.keySet().iterator();
-		while(reqIter.hasNext())
+		for(String endpoint : requests.keySet())
 		{
-			String endpoint = reqIter.next();
 			TransferObject req = requests.get(endpoint);
 			return submit(endpoint, req);
 		}
@@ -317,10 +307,8 @@ public class OfxRequest
 		String setName = thisSet.name();
 
 		TransferObject msgSet = new TransferObject(setName + String.format("MSGSRQV%d", (int)msgsetVer));
-		Iterator<OfxMessageReq> iter = list.iterator();
-		while(iter.hasNext())
+		for(OfxMessageReq req : list)
 		{
-			OfxMessageReq req = iter.next();
 			msgSet.put(req.BuildRequest(msgsetVer));
 		}
 		return msgSet;
@@ -339,19 +327,17 @@ public class OfxRequest
 		List<OfxMessageResp> respList = new LinkedList<OfxMessageResp>();
 
 		TransferObject root = response.getObj("OFX");
-		Iterator<TransferObject.ObjValue> respIter = root.members.iterator();
-		while(respIter.hasNext())
+		for(TransferObject.ObjValue respObj : root.members)
 		{
-			TransferObject child = respIter.next().child;
+			TransferObject child = respObj.child;
 			if(child != null)
 			{
 				OfxMessageReq.MessageSet msgsetId =
 						OfxMessageReq.MessageSet.valueOf(child.name.substring(0, child.name.length()-8));
 				int ver = Integer.parseInt(child.name.substring(child.name.length()-1));
-				Iterator<TransferObject.ObjValue> msgIter = child.members.iterator();
-				while(msgIter.hasNext())
+				for(TransferObject.ObjValue msgObj : child.members)
 				{
-					TransferObject msg = msgIter.next().child;
+					TransferObject msg = msgObj.child;
 					if(msg != null)
 					{
 						TransferObject tran = null;
@@ -361,10 +347,8 @@ public class OfxRequest
 							tran = msg;
 							msg = tran.getObj(coreName + "RS");
 						}
-						Iterator<OfxMessageReq> reqIter = this.contents.iterator();
-						while(reqIter.hasNext())
+						for(OfxMessageReq req : this.contents)
 						{
-							OfxMessageReq req = reqIter.next();
 							if(req.isValidResponse(msgsetId, ver, tran, msg))
 							{
 								OfxMessageResp resp = req.processResponse(tran, msg);

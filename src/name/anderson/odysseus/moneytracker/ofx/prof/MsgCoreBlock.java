@@ -45,10 +45,8 @@ public class MsgCoreBlock
 		LinkedList<String> languages = new LinkedList<String>();
 		LinkedList<String> countries = new LinkedList<String>();
 
-		Iterator<TransferObject.ObjValue> iter = in.members.iterator();
-		while(iter.hasNext())
+		for(TransferObject.ObjValue info : in.members)
 		{
-			TransferObject.ObjValue info = iter.next();
 			if(info.attrValue != null)
 			{
 				if(info.name.equals("LANGUAGE"))

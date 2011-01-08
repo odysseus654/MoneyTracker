@@ -55,10 +55,9 @@ public class MfaChallengeMsgResp extends OfxMessageResp
 	{
 		if(tran != null) this.trn = new TransactionResp(tran);
 		this.challenges = new LinkedList<Challenge>();
-		Iterator<TransferObject.ObjValue> iter = in.members.iterator();
-		while(iter.hasNext())
+		for(TransferObject.ObjValue obj : in.members)
 		{
-			TransferObject val = iter.next().child;
+			TransferObject val = obj.child;
 			if(val != null)
 			{
 				Challenge chal = new Challenge();

@@ -95,10 +95,8 @@ public class TransferObject
 		StringBuilder out = new StringBuilder();
 		out.append("<" + this.name + ">\n");
 
-		Iterator<ObjValue> attrIter = this.members.iterator();
-		while(attrIter.hasNext())
+		for(ObjValue attr : this.members)
 		{
-			ObjValue attr = attrIter.next();
 			if(attr.child != null)
 			{
 				out.append(attr.child.Format(ver));

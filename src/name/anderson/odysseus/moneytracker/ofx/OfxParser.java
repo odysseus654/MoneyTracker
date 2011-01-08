@@ -118,10 +118,8 @@ class OfxParser
     				currentTag.children.addAll(thisObj.members);
     				thisObj.members = currentTag.children;
     			}
-    			Iterator<TransferObject.ObjValue> objIter = thisObj.members.iterator();
-    			while(objIter.hasNext())
+    			for(TransferObject.ObjValue val : thisObj.members)
     			{
-    				TransferObject.ObjValue val = objIter.next();
     				if(!thisObj.memberNames.containsKey(val.name))
     				{
     					thisObj.memberNames.put(val.name, val);

@@ -97,10 +97,8 @@ public class SignonMsgReq extends OfxMessageReq
 		if(this.accessKey != null) obj.put("ACCESSKEY", this.accessKey);
 		if(this.mfaChallenges != null)
 		{
-			Iterator<MfaChallenge> mfaIter = this.mfaChallenges.iterator();
-			while(mfaIter.hasNext())
+			for(MfaChallenge mfaAnswer : this.mfaChallenges)
 			{
-				MfaChallenge mfaAnswer = mfaIter.next();
 				TransferObject mfa = new TransferObject("MFACHALLENGEANSWER");
 				mfa.put("MFAPHRASEID", mfaAnswer.phraseID);
 				mfa.put("MFAPHRASEA", mfaAnswer.answer);
