@@ -49,7 +49,8 @@ public class ProfileTable
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
-		private static final String CREATE_TABLE =
+		private static final String[] CREATE_TABLE =
+		{
 			"CREATE TABLE fi(" +
 			"_id integer primary key autoincrement, parentid integer, lang text, prof_age text, flags integer not null, " +
 			// fidef
@@ -59,20 +60,23 @@ public class ProfileTable
 			"prof_name text, prof_addr1 text, prof_addr2 text, prof_addr3 text, prof_city text, " +
 			"prof_state text, prof_postal text, prof_country text, prof_csphone text, prof_tsphone text, " +
 			"prof_faxphone text, prof_url text, prof_email text " +
-			");" +
+			");",
 			"CREATE TABLE endpoint (" +
 			"_id integer primary key autoincrement, fi integer not null, msgset text not null, " +
 			"ver integer not null, url text not null, flags integer not null, realm text not null, " +
 			"mode integer not null, spname text" +
-			");" +
+			");",
 			"CREATE TABLE realm (" +
 			"_id integer primary key autoincrement, fi integer not null, name text not null, " +
 			"min_chars integer, max_chars integer, char_type integer, flags integer, pass_type integer" +
-			");";
-		private static final String DROP_TABLE =
-			"DROP TABLE IF EXISTS fi;" +
-			"DROP TABLE IF EXISTS endpoint;" +
-			"DROP TABLE IF EXISTS realm;";
+			");"
+		};
+		private static final String[] DROP_TABLE =
+		{
+			"DROP TABLE IF EXISTS fi;",
+			"DROP TABLE IF EXISTS endpoint;",
+			"DROP TABLE IF EXISTS realm;"
+		};
 
 		public OfxFiDefOpenHelper(Context context, String name,	CursorFactory factory, int version)
 		{
@@ -82,12 +86,18 @@ public class ProfileTable
 		@Override
 		public void onCreate(SQLiteDatabase db)
 		{
-			db.execSQL(CREATE_TABLE);
+			for(String cmd : CREATE_TABLE)
+			{
+				db.execSQL(cmd);
+			}
 		}
 		
 		public void wipeTable(SQLiteDatabase db)
 		{
-			db.execSQL(DROP_TABLE);
+			for(String cmd : DROP_TABLE)
+			{
+				db.execSQL(cmd);
+			}
 			onCreate(db);
 		}
 
@@ -300,53 +310,64 @@ public class ProfileTable
 		return profile;
 	}
 
-	private long addProfile(OfxProfile profile)
+	private int addProfile(OfxProfile profile)
 	{
-		ContentValues newValue = new ContentValues();
-//		newValue.put("parentid", ...);
-		int flags = 0;
-		if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
-		if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
-		if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
-		if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
-
-		newValue.put("lang", profile.lang);
-		newValue.put("prof_age", Long.toString(profile.profAge.getTime()));
-		newValue.put("flags", flags);
-		newValue.put("name", profile.fidef.name);
-		newValue.put("url", profile.fidef.fiURL);
-		newValue.put("fi_org", profile.fidef.fiOrg);
-		newValue.put("fi_id", profile.fidef.fiID);
-		newValue.put("app_id", profile.fidef.appId);
-		newValue.put("app_ver", profile.fidef.appVer);
-		newValue.put("ofx_ver", profile.fidef.ofxVer);
-		if(profile.fidescr != null)
+		db.beginTransaction();
+		int fi_id;
+		try
 		{
-			newValue.put("prof_name", profile.fidescr.FIName);
-			newValue.put("prof_addr1", profile.fidescr.Addr1);
-			newValue.put("prof_addr2", profile.fidescr.Addr2);
-			newValue.put("prof_addr3", profile.fidescr.Addr3);
-			newValue.put("prof_city", profile.fidescr.City);
-			newValue.put("prof_state", profile.fidescr.State);
-			newValue.put("prof_postal", profile.fidescr.PostalCode);
-			newValue.put("prof_country", profile.fidescr.Country);
-			newValue.put("prof_csphone", profile.fidescr.CSPhone);
-			newValue.put("prof_tsphone", profile.fidescr.TSPhone);
-			newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
-			newValue.put("prof_url", profile.fidescr.URL);
-			newValue.put("prof_email", profile.fidescr.Email);
+			ContentValues newValue = new ContentValues();
+	//		newValue.put("parentid", ...);
+			int flags = 0;
+			if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
+			if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
+			if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
+			if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
+	
+			newValue.put("lang", profile.lang);
+			newValue.put("prof_age", Long.toString(profile.profAge.getTime()));
+			newValue.put("flags", flags);
+			newValue.put("name", profile.fidef.name);
+			newValue.put("url", profile.fidef.fiURL);
+			newValue.put("fi_org", profile.fidef.fiOrg);
+			newValue.put("fi_id", profile.fidef.fiID);
+			newValue.put("app_id", profile.fidef.appId);
+			newValue.put("app_ver", profile.fidef.appVer);
+			newValue.put("ofx_ver", profile.fidef.ofxVer);
+			if(profile.fidescr != null)
+			{
+				newValue.put("prof_name", profile.fidescr.FIName);
+				newValue.put("prof_addr1", profile.fidescr.Addr1);
+				newValue.put("prof_addr2", profile.fidescr.Addr2);
+				newValue.put("prof_addr3", profile.fidescr.Addr3);
+				newValue.put("prof_city", profile.fidescr.City);
+				newValue.put("prof_state", profile.fidescr.State);
+				newValue.put("prof_postal", profile.fidescr.PostalCode);
+				newValue.put("prof_country", profile.fidescr.Country);
+				newValue.put("prof_csphone", profile.fidescr.CSPhone);
+				newValue.put("prof_tsphone", profile.fidescr.TSPhone);
+				newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
+				newValue.put("prof_url", profile.fidescr.URL);
+				newValue.put("prof_email", profile.fidescr.Email);
+			}
+			fi_id = (int)db.insertOrThrow("fi", "name", newValue);
+			profile.ID = fi_id;
+			
+			refreshChildData(profile);
+			db.setTransactionSuccessful();
 		}
-		long fi_id = db.insert("fi", null, newValue);
-		profile.ID = (int)fi_id;
-		
-		refreshChildData(profile);
+		finally
+		{
+			db.endTransaction();
+		}
 		return fi_id;
 	}
 	
 	private void refreshChildData(OfxProfile profile)
 	{
-		String[] args = { Integer.toString(profile.ID), Integer.toString(profile.ID) };
-		db.execSQL("DELETE FROM endpoint WHERE fi=?;DELETE FROM realm WHERE fi=?;", args);
+		String[] args = { Integer.toString(profile.ID) };
+		db.execSQL("DELETE FROM endpoint WHERE fi=?;", args);
+		db.execSQL("DELETE FROM realm WHERE fi=?;", args);
 		if(profile.endpoints != null)
 		{
 			for(OfxProfile.Endpoint endpoint : profile.endpoints.values())
@@ -370,7 +391,7 @@ public class ProfileTable
 					if(info.core.supportsRecovery) flags = flags | EP_SUPPORTS_RECOVERY;
 					newValue.put("flags", flags);
 
-					db.insert("endpoint", null, newValue);
+					db.insertOrThrow("endpoint", "msgset", newValue);
 				}
 			}
 		}
@@ -395,51 +416,60 @@ public class ProfileTable
 				if(realm.changePassFirst) flags = flags | RM_CHANGE_PASS_FIRST;
 				newValue.put("flags", flags);
 
-				db.insert("realm", null, newValue);
+				db.insertOrThrow("realm", "name", newValue);
 			}
 		}
 	}
 	
 	private void updateProfile(OfxProfile profile)
 	{
-		ContentValues newValue = new ContentValues();
-//		newValue.put("parentid", ...);
-		int flags = 0;
-		if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
-		if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
-		if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
-		if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
-
-		newValue.put("lang", profile.lang);
-		newValue.put("prof_age", profile.profAge.getTime());
-		newValue.put("flags", flags);
-		newValue.put("name", profile.fidef.name);
-		newValue.put("url", profile.fidef.fiURL);
-		newValue.put("fi_org", profile.fidef.fiOrg);
-		newValue.put("fi_id", profile.fidef.fiID);
-		newValue.put("app_id", profile.fidef.appId);
-		newValue.put("app_ver", profile.fidef.appVer);
-		newValue.put("ofx_ver", profile.fidef.ofxVer);
-		if(profile.fidescr != null)
+		db.beginTransaction();
+		try
 		{
-			newValue.put("prof_name", profile.fidescr.FIName);
-			newValue.put("prof_addr1", profile.fidescr.Addr1);
-			newValue.put("prof_addr2", profile.fidescr.Addr2);
-			newValue.put("prof_addr3", profile.fidescr.Addr3);
-			newValue.put("prof_city", profile.fidescr.City);
-			newValue.put("prof_state", profile.fidescr.State);
-			newValue.put("prof_postal", profile.fidescr.PostalCode);
-			newValue.put("prof_country", profile.fidescr.Country);
-			newValue.put("prof_csphone", profile.fidescr.CSPhone);
-			newValue.put("prof_tsphone", profile.fidescr.TSPhone);
-			newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
-			newValue.put("prof_url", profile.fidescr.URL);
-			newValue.put("prof_email", profile.fidescr.Email);
+			ContentValues newValue = new ContentValues();
+	//		newValue.put("parentid", ...);
+			int flags = 0;
+			if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
+			if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
+			if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
+			if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
+	
+			newValue.put("lang", profile.lang);
+			newValue.put("prof_age", profile.profAge.getTime());
+			newValue.put("flags", flags);
+			newValue.put("name", profile.fidef.name);
+			newValue.put("url", profile.fidef.fiURL);
+			newValue.put("fi_org", profile.fidef.fiOrg);
+			newValue.put("fi_id", profile.fidef.fiID);
+			newValue.put("app_id", profile.fidef.appId);
+			newValue.put("app_ver", profile.fidef.appVer);
+			newValue.put("ofx_ver", profile.fidef.ofxVer);
+			if(profile.fidescr != null)
+			{
+				newValue.put("prof_name", profile.fidescr.FIName);
+				newValue.put("prof_addr1", profile.fidescr.Addr1);
+				newValue.put("prof_addr2", profile.fidescr.Addr2);
+				newValue.put("prof_addr3", profile.fidescr.Addr3);
+				newValue.put("prof_city", profile.fidescr.City);
+				newValue.put("prof_state", profile.fidescr.State);
+				newValue.put("prof_postal", profile.fidescr.PostalCode);
+				newValue.put("prof_country", profile.fidescr.Country);
+				newValue.put("prof_csphone", profile.fidescr.CSPhone);
+				newValue.put("prof_tsphone", profile.fidescr.TSPhone);
+				newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
+				newValue.put("prof_url", profile.fidescr.URL);
+				newValue.put("prof_email", profile.fidescr.Email);
+			}
+	
+			String[] args = { Integer.toString(profile.ID) };
+			db.update("fi", newValue, "_id=?", args);
+			
+			refreshChildData(profile);
+			db.setTransactionSuccessful();
 		}
-
-		String[] args = { Integer.toString(profile.ID) };
-		db.update("fi", newValue, "_id=?", args);
-		
-		refreshChildData(profile);
+		finally
+		{
+			db.endTransaction();
+		}
 	}
 }

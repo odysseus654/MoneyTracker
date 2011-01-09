@@ -132,7 +132,7 @@ public class OfxFiDefTable
 		newValue.put("simple_prof", def.simpleProf ? 1 : 0);
 		newValue.put("src_name", def.srcName);
 		newValue.put("src_id", def.srcId);
-		return db.insert(TABLE_NAME, null, newValue);
+		return db.insertOrThrow(TABLE_NAME, null, newValue);
 	}
 	
 	private void updateDefBySource(OfxFiDefinition def)
