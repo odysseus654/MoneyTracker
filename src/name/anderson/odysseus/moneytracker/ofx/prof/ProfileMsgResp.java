@@ -1,6 +1,7 @@
 package name.anderson.odysseus.moneytracker.ofx.prof;
 
 import java.util.*;
+
 import name.anderson.odysseus.moneytracker.ofx.*;
 
 /**
@@ -9,41 +10,24 @@ import name.anderson.odysseus.moneytracker.ofx.*;
  */
 public class ProfileMsgResp extends OfxMessageResp
 {
-	public Map<OfxMessageReq.MessageSet, MsgSetInfoList> msgsetList;
+	public Map<OfxMessageReq.MessageSet, List<MsgSetInfo>> msgsetList;
 	public Map<String, SignonRealm> signonList;
 	public Date DtProfileUp;
-	public String FIName;
-	public String Addr1;
-	public String Addr2;
-	public String Addr3;
-	public String City;
-	public String State;
-	public String PostalCode;
-	public String Country;
-	public String CSPhone;
-	public String TSPhone;
-	public String FaxPhone;
-	public String URL;
-	public String Email;
-/*
-	public ProfileMsgResp()
-	{
-	}
-*/
+	public FiDescr descr;
+	
 	public ProfileMsgResp(TransferObject tran, TransferObject in)
 	{
 		if(tran != null) this.trn = new TransactionResp(tran);
 
-		this.msgsetList = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfoList>();
+		this.msgsetList = new TreeMap<OfxMessageReq.MessageSet, List<MsgSetInfo>>();
 		this.signonList = new TreeMap<String, SignonRealm>();
 
 		TransferObject child = in.getObj("SIGNONINFOLIST");
 		if(child != null)
 		{
-			Iterator<TransferObject.ObjValue> iter = child.members.iterator();
-			while(iter.hasNext())
+			for(TransferObject.ObjValue obj : child.members)
 			{
-				TransferObject info = iter.next().child;
+				TransferObject info = obj.child;
 				if(info != null)
 				{
 					SignonRealm realm = new SignonRealm(info);
@@ -55,34 +39,50 @@ public class ProfileMsgResp extends OfxMessageResp
 		child = in.getObj("MSGSETLIST");
 		if(child != null)
 		{
-			Iterator<TransferObject.ObjValue> iter = child.members.iterator();
-			while(iter.hasNext())
+			for(TransferObject.ObjValue obj : child.members)
 			{
-				TransferObject info = iter.next().child;
+				TransferObject info = obj.child;
 				if(info != null && info.name.endsWith("MSGSET"))
 				{
 					OfxMessageReq.MessageSet msgsetId =
 						OfxMessageReq.MessageSet.valueOf(info.name.substring(0, info.name.length()-6));
-					MsgSetInfoList realm = new MsgSetInfoList(msgsetId, info, this.signonList);
-					this.msgsetList.put(msgsetId, realm);
+					List<MsgSetInfo> infoList = parseMsgSetInfoList(msgsetId, info);
+					this.msgsetList.put(msgsetId, infoList);
 				}
 			}
 		}
 
-		this.DtProfileUp = TransferObject.parseDate(in.getAttr("DTPROFUP"));;
-		this.FIName = in.getAttr("FINAME");
-		this.Addr1 = in.getAttr("ADDR1");
-		this.Addr2 = in.getAttr("ADDR2");
-		this.Addr3 = in.getAttr("ADDR3");
-		this.City = in.getAttr("CITY");
-		this.State = in.getAttr("STATE");
-		this.PostalCode = in.getAttr("POSTALCODE");
-		this.Country = in.getAttr("COUNTRY");
-		this.CSPhone = in.getAttr("CSPHONE");
-		this.TSPhone = in.getAttr("TSPHONE");
-		this.FaxPhone = in.getAttr("FAXPHONE");
-		this.URL = in.getAttr("URL");
-		if(this.URL == null) this.URL = in.getAttr("URL2");
-		this.Email = in.getAttr("EMAIL");
+		this.DtProfileUp = TransferObject.parseDate(in.getAttr("DTPROFUP"));
+		this.descr = new FiDescr(in);
+	}
+	
+	private List<MsgSetInfo> parseMsgSetInfoList(OfxMessageReq.MessageSet msgsetId, TransferObject in)
+	{
+		List<MsgSetInfo> members = new LinkedList<MsgSetInfo>();
+//		this.maxVer = 0;
+		
+		final String prefix = msgsetId.name() + "MSGSETV";
+		for(TransferObject.ObjValue obj : in.members)
+		{
+			TransferObject info = obj.child;
+			if(info != null && info.name.startsWith(prefix))
+			{
+				int ver = Integer.parseInt(info.name.substring(prefix.length()));
+//				if(this.maxVer < ver) this.maxVer = ver;
+				MsgSetInfo msgset = buildMsgSet(msgsetId, ver, info);
+				members.add(msgset);
+			}
+		}
+		return members;
+	}
+	
+	private MsgSetInfo buildMsgSet(OfxMessageReq.MessageSet msgsetId, int ver, TransferObject in)
+	{
+		switch(msgsetId)
+		{
+// SIGNUP, BANK, CREDITCARD, LOAN, INVSTMT, INTERXFER, WIREXFER, BILLPAY, EMAIL, SECLIST, PRESDIR, PRESDLV, IMAGE
+		default: // SIGNON, PROF
+			return new MsgSetInfo(msgsetId, ver, in, signonList);
+		}
 	}
 }

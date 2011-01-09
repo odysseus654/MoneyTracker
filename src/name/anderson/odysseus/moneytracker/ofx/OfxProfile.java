@@ -8,8 +8,6 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import org.apache.http.client.HttpResponseException;
 import org.xmlpull.v1.XmlPullParserException;
-
-import name.anderson.odysseus.moneytracker.ofx.OfxMessageReq.MessageSet;
 import name.anderson.odysseus.moneytracker.ofx.prof.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import name.anderson.odysseus.moneytracker.prof.OfxFiDefinition;
@@ -18,33 +16,44 @@ import name.anderson.odysseus.moneytracker.prof.OfxFiDefinition;
  * @author Erik Anderson
  *
  */
-public class OfxProfile extends OfxFiDefinition
+public class OfxProfile
 {
-//	public String name;
-//	public int defID;
-//	public String fiURL;
-//	public String fiOrg;
-//	public String fiID;
-//	public String appId;
-//	public int appVer;
-//	public float ofxVer;
-//	public boolean simpleProf;
-//	public String srcName;
-//	public String srcId;
-	public String  userid;
-	public String  userpass;
-	public String  userkey;
-	public String  lang;
-	public String  sessCookie;
-	public boolean security;
+	public OfxFiDefinition fidef;
+	public FiDescr fidescr;
 	public Date    profAge;
+	public String  lang;
 	public X509Certificate lastCert;
 	public boolean useExpectContinue;
+	public boolean ignoreEncryption;
+
+	public Map<String,Endpoint> endpoints;
+	public Map<String,SignonRealm> realms;
+	public Map<String,Login> realmLogins;
+	public Map<OfxMessageReq.MessageSet, MsgSetInfo> msgsetMap;
+	public Map<OfxMessageReq.MessageSet, Float> msgsetVer;
 	
-	final static float DEFAULT_OFX_2x = 2.1f;
+	final static float DEFAULT_OFX_2x = 2.11f;
 	final static float DEFAULT_OFX_1x = 1.6f;
 	final static String DEFAULT_APP_ID = "QWIN";
 	final static int DEFAULT_APP_VER = 1900;
+	
+	public static class Endpoint
+	{
+		public Map<OfxMessageReq.MessageSet, MsgSetInfo> msgsetInfo;
+		
+		public Endpoint()
+		{
+			msgsetInfo = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();
+		}
+	}
+	
+	public static class Login
+	{
+		public String  userid;
+		public String  userpass;
+		public String  userkey;
+		public String  sessCookie;
+	}
 	
 	public OfxProfile()
 	{
@@ -54,25 +63,15 @@ public class OfxProfile extends OfxFiDefinition
 	public OfxProfile(OfxFiDefinition src)
 	{
 		this.useExpectContinue = true;
-		this.name = src.name;
-		this.defID = src.defID;
-		this.fiURL = src.fiURL;
-		this.fiOrg = src.fiOrg;
-		this.fiID = src.fiID;
-		this.appId = src.appId;
-		this.appVer = src.appVer;
-		this.ofxVer = src.ofxVer;
-		this.simpleProf = src.simpleProf;
-		this.srcName = src.srcName;
-		this.srcId = src.srcId;
+		this.fidef = src != null ? src : new OfxFiDefinition();
 	}
 	
 	public void negotiate() throws XmlPullParserException, IOException
 	{
 		OfxRequest req = new OfxRequest(this);
-		req.version = this.ofxVer == 0 ? DEFAULT_OFX_2x : this.ofxVer;
-		req.security = false;
-		SignonMsgReq son = newSonRequest(true); 
+		req.version = this.fidef.ofxVer == 0 ? DEFAULT_OFX_2x : this.fidef.ofxVer;
+		req.anonymous = true;
+		SignonMsgReq son = createAnonymousSignon(); 
         req.addRequest(son);
         req.addRequest(newProfRequest());
 
@@ -111,18 +110,18 @@ public class OfxProfile extends OfxFiDefinition
 	        		break;
 
 	        	case 400: // "Bad Request"
-	        		if(this.ofxVer == 0 && req.version == DEFAULT_OFX_2x)
+	        		if(this.fidef.ofxVer == 0 && req.version == DEFAULT_OFX_2x)
 	        		{
 	        			// 2.x autodetected request failed, let's try 1.x 
 	        			req.version = DEFAULT_OFX_1x;
 	        			continue;
 	        		}
-	        		if(son.appId == null && (this.ofxVer != 0 || req.version == DEFAULT_OFX_1x))
+	        		if(son.appId == null && (this.fidef.ofxVer != 0 || req.version == DEFAULT_OFX_1x))
 	        		{
 	        			// we failed either an explicit version or an autodetect scan, start over with an override app
 	        			son.appId = DEFAULT_APP_ID;
 	        			son.appVer = DEFAULT_APP_VER;
-	        			req.version = this.ofxVer == 0 ? DEFAULT_OFX_2x : this.ofxVer;
+	        			req.version = this.fidef.ofxVer == 0 ? DEFAULT_OFX_2x : this.fidef.ofxVer;
 	        			continue;
 	        		}
 	        		break;
@@ -133,7 +132,7 @@ public class OfxProfile extends OfxFiDefinition
 	        	{
 	        		break;
 	        	} else {
-	        		throw(e);
+	        		throw e;
 	        	}
 	        }
 
@@ -143,59 +142,33 @@ public class OfxProfile extends OfxFiDefinition
 	        catch(XmlPullParserException e)
 	        {
 	        	// did this return a 1.x response to a 2.x query?
-        		if(this.ofxVer == 0 && req.version == DEFAULT_OFX_2x)
+        		if(this.fidef.ofxVer == 0 && req.version == DEFAULT_OFX_2x)
         		{
         			req.version = DEFAULT_OFX_1x;
         			continue;
+        		} else {
+        			throw e;
         		}
 	        }
-
+	        
+	        ProfileMsgResp proResp = (ProfileMsgResp) response.get(1);
+	    	mergeProfileResponse(req.version, proResp);
 	        break;
         }
         this.lastCert = req.getLastServerCert();
         
         // negotiation successful, punch our values
-        this.ofxVer = req.version;
-		this.appId = son.appId;
-		this.appVer = son.appVer;
+        this.fidef.ofxVer = req.version;
+		this.fidef.appId = son.appId;
+		this.fidef.appVer = son.appVer;
+		// req.useExpectContinue
 	}
 	
 	public OfxRequest newRequest(boolean anon)
 	{
 		OfxRequest req = new OfxRequest(this);
-		req.version = this.ofxVer;
-		req.security = this.security;
-
-        req.addRequest(newSonRequest(anon));
-
+		req.version = this.fidef.ofxVer;
     	return req;
-	}
-	
-	private SignonMsgReq newSonRequest(boolean anon)
-	{
-        SignonMsgReq son = new SignonMsgReq();
-        if(!anon)
-        {
-	        if(this.userkey != null)
-	        {
-	        	son.userkey = this.userkey;
-	        }
-	        else if(this.userid != null && this.userpass != null)
-	        {
-	        	son.userid = this.userid;
-	        	son.userpass = this.userpass;
-	        }
-	        son.sessCookie = this.sessCookie;
-        }
-        if(this.lang != null) son.lang = this.lang;
-        if(this.appId != null)
-        {
-        	son.appId = this.appId;
-        	son.appVer = this.appVer;
-        }
-        if(this.fiID != null) son.fiID = this.fiID;
-        if(this.fiOrg != null) son.fiOrg = this.fiOrg;
-        return son;
 	}
 	
 	public ProfileMsgReq newProfRequest()
@@ -204,22 +177,170 @@ public class OfxProfile extends OfxFiDefinition
 		pro.profAge = this.profAge;
 		return pro;
 	}
+	
+	public void mergeProfileResponse(float ofxVer, ProfileMsgResp resp)
+	{
+		Map<String,Endpoint> newEPs = new TreeMap<String,Endpoint>();
+		Map<String,SignonRealm> newRealms = new TreeMap<String,SignonRealm>();
+		Map<OfxMessageReq.MessageSet, MsgSetInfo> newMap = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();
+		Map<OfxMessageReq.MessageSet, Float> newVers = new TreeMap<OfxMessageReq.MessageSet, Float>(); 
+
+		for(OfxMessageReq.MessageSet thisSet : resp.msgsetList.keySet())
+		{
+			List<MsgSetInfo> infoList = resp.msgsetList.get(thisSet);
+			int verLimit = 99;
+			int maxVer;
+			float thisVer = 0;
+			for(;;)
+			{
+				maxVer = 0;
+				for(MsgSetInfo info : infoList)
+				{
+					if(info.ver > maxVer && info.ver < verLimit) maxVer = info.ver;
+				}
+				thisVer = ((float)((int)ofxVer)) + ((float)maxVer)/10;
+				if(maxVer > 0 && !isVersionAcceptible(thisVer))
+				{
+					verLimit = maxVer;
+					continue;
+				} else {
+					break;
+				}
+			}
+			if(maxVer == 0) continue;	// we weren't able to find an acceptable version
+			
+			for(MsgSetInfo info : infoList)
+			{
+				if(info.ver == maxVer)
+				{
+					// do we have this endpoint yet?
+					Endpoint thisEP;
+					if(!newEPs.containsKey(info.core.URL))
+					{
+						thisEP = new Endpoint();
+						newEPs.put(info.core.URL, thisEP);
+					} else {
+						thisEP = newEPs.get(info.core.URL);
+					}
+					
+					// do we have this realm yet?
+					SignonRealm realm = info.core.realm;
+					if(realm != null && !newRealms.containsKey(realm.name))
+					{
+						newRealms.put(realm.name, realm);
+					}
+					
+					thisEP.msgsetInfo.put(thisSet, info);
+					if(thisSet != OfxMessageReq.MessageSet.SIGNON && thisSet != OfxMessageReq.MessageSet.SIGNUP)
+					{
+						newMap.put(thisSet, info);
+					}
+					
+					newVers.put(thisSet, thisVer);
+				}
+			}
+		}
+
+		this.fidescr = resp.descr;
+		this.profAge = resp.DtProfileUp;
+		this.endpoints = newEPs;
+		this.realms = newRealms;
+		this.msgsetMap = newMap;
+		this.msgsetVer = newVers; 
+	}
+
+	private boolean isVersionAcceptible(float msgsetVer)
+	{
+		return true;
+	}
+
+	public float getMsgsetVer(float ofxVer, OfxMessageReq.MessageSet thisSet)
+	{
+		if(this.msgsetVer == null || !this.msgsetVer.containsKey(thisSet))
+		{
+			return ((float)((int)ofxVer)) + 0.1f;
+		} else {
+			return this.msgsetVer.get(thisSet);
+		}
+	}
+
+	public MsgSetInfo getInfo(OfxMessageReq.MessageSet thisSet)
+	{
+		if(this.msgsetMap == null || !this.msgsetMap.containsKey(thisSet))
+		{
+			return null;
+		} else {
+			return this.msgsetMap.get(thisSet);
+		}
+	}
 
 	public String getEndpoint(OfxMessageReq.MessageSet thisSet)
 	{
-		// default behavior: Prof is the endpoint, no other sets permitted without a profile
-		// (we should never be called with Signon)
-//		if(thisSet == OfxMessageReq.MessageSet.Prof)
-//		{
-			return this.fiURL;
-//		} else {
-//			return null;
-//		}
+		if(this.msgsetMap == null)
+		{
+			return this.fidef.fiURL;
+		}
+		else if(!this.msgsetMap.containsKey(thisSet))
+		{
+			return null;
+		}
+		else
+		{
+			return this.msgsetMap.get(thisSet).core.URL;
+		}
 	}
 
-	public float getMsgsetVer(float ofxVer, MessageSet thisSet)
+	public SignonMsgReq createSignon(OfxMessageReq.MessageSet msgset)
 	{
-		// default behavior: report V1
-		return ((float)((int)ofxVer)) + 0.1f;
+		String realm;
+		if(this.msgsetMap == null)
+		{
+			realm = "";
+		}
+		else if(!this.msgsetMap.containsKey(msgset))
+		{
+			return null;
+		}
+		else
+		{
+			MsgSetInfo info = this.msgsetMap.get(msgset);
+			realm = info.core.realm == null ? "" : info.core.realm.name;
+		}
+		if(this.realmLogins == null || !this.realmLogins.containsKey(realm))
+		{
+			return createAnonymousSignon();
+		} else {
+			return createSignon(this.realmLogins.get(realm));
+		}
+	}
+
+	public SignonMsgReq createSignon(Login login)
+	{
+        SignonMsgReq son = createAnonymousSignon();
+        if(login.userkey != null)
+        {
+        	son.userkey = login.userkey;
+        }
+        else if(login.userid != null && login.userpass != null)
+        {
+        	son.userid = login.userid;
+        	son.userpass = login.userpass;
+        }
+        son.sessCookie = login.sessCookie;
+        return son;
+	}
+	
+	public SignonMsgReq createAnonymousSignon()
+	{
+        SignonMsgReq son = new SignonMsgReq();
+        if(this.lang != null) son.lang = this.lang;
+        if(this.fidef.appId != null)
+        {
+        	son.appId = this.fidef.appId;
+        	son.appVer = this.fidef.appVer;
+        }
+        if(this.fidef.fiID != null) son.fiID = this.fidef.fiID;
+        if(this.fidef.fiOrg != null) son.fiOrg = this.fidef.fiOrg;
+        return son;
 	}
 }

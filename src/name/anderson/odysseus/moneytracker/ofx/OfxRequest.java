@@ -9,6 +9,8 @@ import java.util.*;
 import javax.net.ssl.*;
 
 import name.anderson.odysseus.moneytracker.Utilities;
+import name.anderson.odysseus.moneytracker.ofx.prof.MsgSetInfo;
+import name.anderson.odysseus.moneytracker.ofx.signon.SignonMsgReq;
 
 import org.apache.http.*;
 import org.apache.http.client.*;
@@ -28,9 +30,9 @@ import org.xmlpull.v1.XmlPullParserException;
 public class OfxRequest
 {
 	public float version;
-	public boolean security;
 	public UUID fileUid;
 	public boolean useExpectContinue;
+	public boolean anonymous;
 	protected List<OfxMessageReq> contents;
 	protected OfxProfile profile;
 	private SchemeRegistry registry;
@@ -41,7 +43,7 @@ public class OfxRequest
 		this.useExpectContinue = pro.useExpectContinue;
 		this.profile = pro;
 		this.version = 0;
-		this.security = false;
+		this.anonymous = false;
 		this.contents = new LinkedList<OfxMessageReq>();
 	}
 	
@@ -71,25 +73,34 @@ public class OfxRequest
 			reqList.add(req);
 		}
 
-		if(!requestSets.containsKey(OfxMessageReq.MessageSet.SIGNON)) return null;
-		TransferObject signon = BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, requestSets.get(OfxMessageReq.MessageSet.SIGNON),
-				this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON));
-		requestSets.remove(OfxMessageReq.MessageSet.SIGNON);
+//		TransferObject signon = BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, requestSets.get(OfxMessageReq.MessageSet.SIGNON),
+//				this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON));
+//		requestSets.remove(OfxMessageReq.MessageSet.SIGNON);
 		
 		TransferObject req = new TransferObject("OFX");
-		req.put(signon);
+		OfxMessageReq.MessageSet firstMsgSet = requestSets.isEmpty() ? null : requestSets.firstKey();
+		
+		SignonMsgReq thisSon = this.anonymous ? profile.createAnonymousSignon()
+				: profile.createSignon(firstMsgSet == null ? OfxMessageReq.MessageSet.SIGNON : firstMsgSet);
+		if(thisSon != null && firstMsgSet != OfxMessageReq.MessageSet.SIGNON)
+		{
+			req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
+					this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON), thisSon));
+		}
 
 		for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
 		{
-			req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), this.profile.getMsgsetVer(this.version, thisSet)));
+			req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), this.profile.getMsgsetVer(this.version, thisSet), thisSon));
 		}
 
-		return FormatHeader(this.version) + req.Format(this.version);
+		return FormatHeader(false, this.version) + req.Format(this.version);
 	}
 
 	public Reader submit() throws IOException
 	{
-		SortedMap<String, TransferObject> requests;
+		SortedMap<String, TransferObject> requests = new TreeMap<String, TransferObject>();
+		Set<String> encrypted = new TreeSet<String>();
+
 		{
 			SortedMap<OfxMessageReq.MessageSet, List<OfxMessageReq> > requestSets
 				= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
@@ -110,35 +121,46 @@ public class OfxRequest
 				reqList.add(req);
 			}
 			
-			if(!requestSets.containsKey(OfxMessageReq.MessageSet.SIGNON)) return null;
-//			TransferObject signon = BuildMsgSet(OfxMessageReq.MessageSet.Signon, requestSets.get(OfxMessageReq.MessageSet.Signon),
-//					this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.Signon));
-//			requestSets.remove(OfxMessageReq.MessageSet.Signon);
-			
-			requests = new TreeMap<String, TransferObject>();
 			for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
 			{
 				String endpoint = this.profile.getEndpoint(thisSet);
 				if(endpoint == null) return null;
 				float msgsetVer = this.profile.getMsgsetVer(this.version, thisSet);
+
+				// we requesting an encrypted connection here?
+				if(!profile.ignoreEncryption)
+				{
+					MsgSetInfo info = profile.getInfo(thisSet);
+					if(info != null && info.core.securePass && !encrypted.contains(endpoint))
+					{
+						encrypted.add(endpoint);
+					}
+				}
 	
 				TransferObject req;
+				SignonMsgReq thisSon = null;
 				if(requests.containsKey(endpoint))
 				{
 					req = requests.get(endpoint);
 				} else {
 					req = new TransferObject("OFX");
-//					req.put(signon);
 					requests.put(endpoint, req);
+
+					thisSon = this.anonymous ? profile.createAnonymousSignon() : profile.createSignon(thisSet);
+					if(thisSon != null && thisSet != OfxMessageReq.MessageSet.SIGNON)
+					{
+						req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
+								this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON), thisSon));
+					}
 				}
-				req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), msgsetVer));
+				req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), msgsetVer, thisSon));
 			}
 		}
 
 		for(String endpoint : requests.keySet())
 		{
 			TransferObject req = requests.get(endpoint);
-			return submit(endpoint, req);
+			return submit(encrypted.contains(endpoint), endpoint, req);
 		}
 		return null;
 	}
@@ -202,11 +224,11 @@ public class OfxRequest
 		}
 	}
 
-	private Reader submit(String endpoint, TransferObject reqObj) throws IOException
+	private Reader submit(boolean security, String endpoint, TransferObject reqObj) throws IOException
 	{
 		HttpClient client = buildClient();
 		HttpPost post = new HttpPost(endpoint);
-		String strReq = FormatHeader(this.version) + reqObj.Format(this.version);
+		String strReq = FormatHeader(security, this.version) + reqObj.Format(this.version);
 		StringEntity request = new StringEntity(strReq);
 		post.setEntity(request);
 		post.addHeader("Content-type", "application/x-ofx");
@@ -250,7 +272,7 @@ public class OfxRequest
         }
 	}
 
-	private String FormatHeader(float version)
+	private String FormatHeader(boolean security, float version)
 	{
 		UUID newFileUid = UUID.randomUUID();
 		StringBuilder out = new StringBuilder();
@@ -259,7 +281,7 @@ public class OfxRequest
 			out.append("OFXHEADER:100\n")
 				.append("DATA:OFXSGML\n")
 				.append(String.format("VERSION:%03d\n", (int)(version * 100)));
-			if(this.security)
+			if(security)
 			{
 				out.append("SECURITY:TYPE1\n");
 			} else {
@@ -283,7 +305,7 @@ public class OfxRequest
 				.append("<?OFX ")
 				.append("OFXHEADER=\"200\" ")
 				.append(String.format("VERSION=\"%03d\" ", (int)(this.version * 100)));
-			if(this.security)
+			if(security)
 			{
 				out.append("SECURITY=\"TYPE1\" ");
 			} else {
@@ -302,14 +324,24 @@ public class OfxRequest
 		return out.toString();
 	}
 	
-	private static TransferObject BuildMsgSet(OfxMessageReq.MessageSet thisSet, List<OfxMessageReq> list, float msgsetVer)
+	private static TransferObject BuildMsgSet(OfxMessageReq.MessageSet thisSet, List<OfxMessageReq> list,
+			float msgsetVer, SignonMsgReq thisSon)
 	{
 		String setName = thisSet.name();
 
+		boolean hasSon = false;
 		TransferObject msgSet = new TransferObject(setName + String.format("MSGSRQV%d", (int)msgsetVer));
-		for(OfxMessageReq req : list)
+		if(list != null)
 		{
-			msgSet.put(req.BuildRequest(msgsetVer));
+			for(OfxMessageReq req : list)
+			{
+				if(req.name.equals("SON")) hasSon = true;
+				msgSet.put(req.BuildRequest(msgsetVer));
+			}
+		}
+		if(thisSet == OfxMessageReq.MessageSet.SIGNON && thisSon != null && !hasSon)
+		{
+			msgSet.putHead(thisSon.BuildRequest(msgsetVer));
 		}
 		return msgSet;
 	}

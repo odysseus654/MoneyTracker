@@ -18,7 +18,7 @@ class OfxParser
 		public String key;
 		public String value;
 		public String lastPlainToken;
-		public List<TransferObject.ObjValue> children;
+		public LinkedList<TransferObject.ObjValue> children;
 	}
 
 	public static TransferObject parseV1(Reader in) throws XmlPullParserException, IOException
@@ -307,7 +307,7 @@ class OfxParser
 		String text = parser.getText();
 		int pos = text.indexOf(' ');
 		if(pos < 0) return null;
-		String key = text.substring(0, pos);
+		CharSequence key = text.subSequence(0, pos);
 		if(!key.equals("OFX")) return null;
 		
 		// *grumble* *grumble* have to parse our own attributes?

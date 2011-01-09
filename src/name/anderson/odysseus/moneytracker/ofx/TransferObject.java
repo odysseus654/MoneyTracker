@@ -11,7 +11,7 @@ import android.text.format.DateFormat;
 public class TransferObject
 {
 	public String name;
-	public List<ObjValue> members;
+	public LinkedList<ObjValue> members;
 	public Map<String, ObjValue> memberNames;
 	
 	static public class ObjValue
@@ -90,6 +90,16 @@ public class TransferObject
 		}
 	}
 	
+	public void putHead(TransferObject obj)
+	{
+		ObjValue val = new ObjValue(obj.name, obj);
+		this.members.addFirst(val);
+		if(!this.memberNames.containsKey(obj.name))
+		{
+			this.memberNames.put(obj.name, val);
+		}
+	}
+
 	public String Format(float ver)
 	{
 		StringBuilder out = new StringBuilder();

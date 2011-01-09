@@ -5,7 +5,6 @@ import java.io.Reader;
 import java.util.List;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
-import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
 import android.app.*;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;

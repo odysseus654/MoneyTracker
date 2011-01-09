@@ -14,6 +14,7 @@ import java.util.Date;
 import javax.net.ssl.*;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.R;
+import name.anderson.odysseus.moneytracker.ofx.FiDescr;
 import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
 import org.apache.http.client.*;
 
@@ -122,64 +123,83 @@ public class VerifyProfile extends Activity implements Runnable
 			((TextView)findViewById(R.id.Issuer)).setText("UNKNOWN");
 		}
 		
-		// TODO Auto-generated method stub
-		int i = 0;
-		/*
-		<TableLayout android:layout_below="@id/ProfHelp" android:layout_width="fill_parent"
-			android:layout_height="wrap_content">
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfNameRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_name" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/ProfName"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfAddrRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_addr" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/ProfAddr"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfCSPhoneRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_csphone" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/ProfCSPhone"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfTSPhoneRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_tsphone" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/TSPhone"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfFaxPhoneRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_faxphone" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/ProfFaxPhone"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfUrlRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_url" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/ProfUrl"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-			<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfEmailRow">
-				<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-					android:text="@string/verify_profile_prof_email" />
-				<TextView android:layout_width="fill_parent" android:id="@+id/ProfEmail"
-					android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
-			</TableRow>
-		</TableLayout>
-
-		<!-- end buttons -->
-		<LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content"
-			android:layout_alignParentBottom="true">
-			<Button android:text="@string/trustme" android:layout_width="fill_parent"
-				android:id="@+id/OkButton" android:layout_height="wrap_content" android:layout_weight="1" />
-			<Button android:text="@string/cancel" android:layout_width="fill_parent"
-				android:id="@+id/CancelButton" android:layout_height="wrap_content" android:layout_weight="1" />
-		</LinearLayout>
-		*/
+		if(profile.fidescr != null)
+		{
+			FiDescr d = profile.fidescr;
+			if(d.FIName != null && !d.FIName.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfName)).setText(d.FIName);
+			} else {
+				findViewById(R.id.ProfNameRow).setVisibility(View.GONE);
+			}
+			String addr = "";
+			if(d.Addr1 != null) addr = d.Addr1;
+			if(d.Addr2 != null) addr = addr + '\n' + d.Addr2;
+			if(d.Addr3 != null) addr = addr + '\n' + d.Addr3;
+			if(d.City != null || d.State != null || d.PostalCode != null || d.Country != null)
+			{
+				String lastLine = "";
+				if(d.City != null) lastLine = d.City;
+				if(d.State != null)
+				{
+					if(!lastLine.equals("")) lastLine = lastLine + ", ";
+					lastLine = lastLine + d.State;
+				}
+				if(d.PostalCode != null)
+				{
+					if(!lastLine.equals("")) lastLine = lastLine + ' ';
+					lastLine = lastLine + d.PostalCode;
+				}
+				if(d.Country != null)
+				{
+					if(!lastLine.equals("")) lastLine = lastLine + ' ';
+					lastLine = lastLine + d.Country;
+				}
+				if(!addr.equals("")) addr = addr + '\n';
+				addr = addr + lastLine;
+			}
+			if(!addr.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfAddr)).setText(addr);
+			} else {
+				findViewById(R.id.ProfAddrRow).setVisibility(View.GONE);
+			}
+			if(d.CSPhone != null && !d.CSPhone.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfCSPhone)).setText(d.CSPhone);
+			} else {
+				findViewById(R.id.ProfCSPhoneRow).setVisibility(View.GONE);
+			}
+			if(d.TSPhone != null && !d.TSPhone.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfTSPhone)).setText(d.TSPhone);
+			} else {
+				findViewById(R.id.ProfTSPhoneRow).setVisibility(View.GONE);
+			}
+			if(d.FaxPhone != null && !d.FaxPhone.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfFaxPhone)).setText(d.FaxPhone);
+			} else {
+				findViewById(R.id.ProfFaxPhoneRow).setVisibility(View.GONE);
+			}
+			if(d.URL != null && !d.URL.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfUrl)).setText(d.URL);
+			} else {
+				findViewById(R.id.ProfUrlRow).setVisibility(View.GONE);
+			}
+			if(d.Email != null && !d.Email.equals(""))
+			{
+				((TextView)findViewById(R.id.ProfEmail)).setText(d.Email);
+			} else {
+				findViewById(R.id.ProfEmailRow).setVisibility(View.GONE);
+			}
+		}
+		else
+		{
+			findViewById(R.id.ProfHelp).setVisibility(View.GONE);
+			findViewById(R.id.ProfTable).setVisibility(View.GONE);
+		}
 
 		((Button)findViewById(R.id.OkButton)).setOnClickListener(new View.OnClickListener()
 		{

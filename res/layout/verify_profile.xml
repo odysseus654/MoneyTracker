@@ -5,80 +5,79 @@
 	<TextView android:layout_width="fill_parent" android:id="@+id/CertHelp"
 		android:layout_height="wrap_content" android:text="@string/verify_profile_cert_help"
 		android:layout_alignParentTop="true" android:textStyle="italic" />
-	<TextView android:layout_width="fill_parent" android:id="@+id/Name"
+	<TextView android:layout_width="wrap_content" android:id="@+id/Name"
 		android:layout_height="wrap_content" android:text="'PLACEHOLDER'"
 		android:layout_below="@id/CertHelp" android:textStyle="bold" android:textColor="#0ff" />
 
 	<TableLayout android:layout_below="@id/Name" android:layout_width="fill_parent"
-		android:layout_height="wrap_content" android:id="@+id/TableLayout">
+		android:layout_height="wrap_content" android:id="@+id/TableLayout" android:shrinkColumns="1">
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_site" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/Site"
+			<TextView android:layout_width="wrap_content" android:id="@+id/Site"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" android:textColor="#0ff" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_issuer" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/Issuer"
+			<TextView android:layout_width="wrap_content" android:id="@+id/Issuer"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" android:textColor="#0ff" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_expires" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/Expires"
+			<TextView android:layout_width="wrap_content" android:id="@+id/Expires"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" android:textColor="#0ff" />
 		</TableRow>
 	</TableLayout>
 	
-	<View android:layout_below="@id/TableLayout" android:layout_width="fill_parent"
-		android:id="@+id/ProfSeparator" android:layout_height="10dp" />
 	<TextView android:layout_width="fill_parent" android:id="@+id/ProfHelp"
 		android:layout_height="wrap_content" android:text="@string/verify_profile_profile_help"
-		android:layout_below="@id/ProfSeparator" android:textStyle="italic"/>
+		android:layout_below="@id/TableLayout" android:textStyle="italic"
+		android:paddingTop="10dp" />
 
 	<TableLayout android:layout_below="@id/ProfHelp" android:layout_width="fill_parent"
-		android:layout_height="wrap_content">
+		android:layout_height="wrap_content" android:shrinkColumns="1" android:id="@+id/ProfTable">
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfNameRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_name" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/ProfName"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfName"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfAddrRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_addr" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/ProfAddr"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfAddr"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfCSPhoneRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_csphone" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/ProfCSPhone"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfCSPhone"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfTSPhoneRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_tsphone" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/TSPhone"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfTSPhone"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfFaxPhoneRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_faxphone" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/ProfFaxPhone"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfFaxPhone"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfUrlRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_url" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/ProfUrl"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfUrl"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 		<TableRow android:layout_width="fill_parent" android:layout_height="wrap_content" android:id="@+id/ProfEmailRow">
 			<TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
 				android:text="@string/verify_profile_prof_email" />
-			<TextView android:layout_width="fill_parent" android:id="@+id/ProfEmail"
+			<TextView android:layout_width="wrap_content" android:id="@+id/ProfEmail"
 				android:layout_height="wrap_content" android:text="'PLACEHOLDER'" />
 		</TableRow>
 	</TableLayout>

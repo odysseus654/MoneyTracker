@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import name.anderson.odysseus.moneytracker.ofx.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
+import name.anderson.odysseus.moneytracker.prof.OfxFiDefinition;
 
 public class MoneyTrackerEntry extends Activity {
     /** Called when the activity is first created. */
@@ -19,13 +20,15 @@ public class MoneyTrackerEntry extends Activity {
         try
         {
     		OfxProfile pro = new OfxProfile();
-        	pro.ofxVer = 1.6f;
-//        	pro.fiOrg = "Whatcom Educational Credit Union";
-//        	pro.fiID = "1";
-//        	pro.fiURL = "https://emax.wecu.com/ofx/ofx.dll";
-        	pro.fiURL = "https://localhost";
-        	pro.appId = "QWIN";
-        	pro.appVer = 1900;
+    		OfxFiDefinition def = new OfxFiDefinition();
+    		pro.fidef = def;
+    		def.ofxVer = 1.6f;
+//        	def.fiOrg = "Whatcom Educational Credit Union";
+//        	def.fiID = "1";
+//        	def.fiURL = "https://emax.wecu.com/ofx/ofx.dll";
+    		def.fiURL = "https://localhost";
+    		def.appId = "QWIN";
+    		def.appVer = 1900;
 /*        	
         	OfxRequest req = pro.newRequest();
         	ChallengeMsgReq challenge = new ChallengeMsgReq();
@@ -77,33 +80,4 @@ public class MoneyTrackerEntry extends Activity {
 		}
 //        setContentView(R.layout.main);
     }
-
-    private static String convertStreamToString(InputStream is) throws IOException
-    {
-	    /*
-	     * To convert the InputStream to String we use the
-	     * Reader.read(char[] buffer) method. We iterate until the
-	     * Reader return -1 which means there's no more data to
-	     * read. We use the StringWriter class to produce the string.
-	     */
-    	if (is != null)
-    	{
-    		Writer writer = new StringWriter();
-
-    		char[] buffer = new char[1024];
-    		try {
-    			Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-    			int n;
-    			while ((n = reader.read(buffer)) != -1)
-    			{
-    				writer.write(buffer, 0, n);
-    			}
-    		} finally {
-    			is.close();
-    		}
-    		return writer.toString();
-    	} else {       
-    		return "";
-    	}
-	}
 }
