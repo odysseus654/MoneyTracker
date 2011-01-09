@@ -2,6 +2,7 @@ package name.anderson.odysseus.moneytracker.prof;
 
 import android.app.*;
 import android.content.DialogInterface;
+import android.database.sqlite.SQLiteException;
 import android.os.*;
 import android.text.TextUtils;
 import android.view.View;
@@ -14,8 +15,7 @@ import java.util.Date;
 import javax.net.ssl.*;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.R;
-import name.anderson.odysseus.moneytracker.ofx.FiDescr;
-import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
+import name.anderson.odysseus.moneytracker.ofx.*;
 import org.apache.http.client.*;
 
 /**
@@ -246,6 +246,21 @@ public class VerifyProfile extends Activity implements Runnable
 
 	private void profileSelected()
 	{
+		ProfileTable db = new ProfileTable(this);
+		try
+		{
+			db.open();
+			db.pushProfile(profile);
+		}
+		catch(SQLiteException e)
+		{
+			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to store profile", "Internal Error", null);
+			dlg.show();
+		}
+		finally
+		{
+			db.close();
+		}
 		// TODO Auto-generated method stub
 		int i = 0;
 	}

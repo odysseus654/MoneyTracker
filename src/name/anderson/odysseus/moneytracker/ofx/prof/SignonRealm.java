@@ -25,11 +25,11 @@ public class SignonRealm
 	public boolean changePassAllowed;
 	public boolean changePassFirst;
 	public int passType;
-/*
+
 	public SignonRealm()
 	{
 	}
-*/
+
 	public SignonRealm(TransferObject in)
 	{
 		this.name = in.getAttr("SIGNONREALM");

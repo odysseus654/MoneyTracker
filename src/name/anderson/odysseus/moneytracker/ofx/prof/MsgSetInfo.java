@@ -15,6 +15,11 @@ public class MsgSetInfo
 	public int ver;
 	public MsgCoreBlock core;
 
+	public MsgSetInfo()
+	{
+		this.core = new MsgCoreBlock();
+	}
+
 	public MsgSetInfo(OfxMessageReq.MessageSet msgsetId, int ver, TransferObject in, Map<String, SignonRealm> signonList)
 	{
 		this.ver = ver;

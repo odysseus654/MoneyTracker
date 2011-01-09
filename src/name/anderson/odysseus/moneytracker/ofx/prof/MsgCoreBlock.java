@@ -20,17 +20,17 @@ public class MsgCoreBlock
 	public String URL;
 	public boolean securePass;
 	public SignonRealm realm;
-	public String[] langs;
-	public String[] countries;
+//	public String[] langs;
+//	public String[] countries;
 	public int syncMode;
 	public boolean supportsRefresh;
 	public boolean supportsRecovery;
 	public String SpName;
-/*
+
 	public MsgCoreBlock()
 	{
 	}
-*/
+
 	public MsgCoreBlock(TransferObject in, Map<String, SignonRealm> signonList)
 	{
 		this.URL = in.getAttr("URL");
@@ -41,7 +41,7 @@ public class MsgCoreBlock
 		
 		strValue = in.getAttr("SIGNONREALM");
 		if(strValue != null) this.realm = signonList.get(strValue);
-
+/*
 		LinkedList<String> languages = new LinkedList<String>();
 		LinkedList<String> countries = new LinkedList<String>();
 
@@ -61,7 +61,7 @@ public class MsgCoreBlock
 		}
 		this.langs = languages.toArray(new String[languages.size()]);
 		this.countries = countries.toArray(new String[countries.size()]);
-
+*/
 		strValue = in.getAttr("SYNCMODE");
 		if(strValue.equals("FULL"))
 		{

@@ -16,6 +16,10 @@ public class FiDescr
 	public String URL;
 	public String Email;
 	
+	public FiDescr()
+	{
+	}
+	
 	public FiDescr(TransferObject in)
 	{
 		this.FIName = in.getAttr("FINAME");

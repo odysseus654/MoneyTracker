@@ -25,12 +25,13 @@ public class OfxProfile
 	public X509Certificate lastCert;
 	public boolean useExpectContinue;
 	public boolean ignoreEncryption;
+	public boolean profileIsUser;
+	public int ID;
 
 	public Map<String,Endpoint> endpoints;
 	public Map<String,SignonRealm> realms;
 	public Map<String,Login> realmLogins;
 	public Map<OfxMessageReq.MessageSet, MsgSetInfo> msgsetMap;
-	public Map<OfxMessageReq.MessageSet, Float> msgsetVer;
 	
 	final static float DEFAULT_OFX_2x = 2.11f;
 	final static float DEFAULT_OFX_1x = 1.6f;
@@ -183,14 +184,12 @@ public class OfxProfile
 		Map<String,Endpoint> newEPs = new TreeMap<String,Endpoint>();
 		Map<String,SignonRealm> newRealms = new TreeMap<String,SignonRealm>();
 		Map<OfxMessageReq.MessageSet, MsgSetInfo> newMap = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();
-		Map<OfxMessageReq.MessageSet, Float> newVers = new TreeMap<OfxMessageReq.MessageSet, Float>(); 
 
 		for(OfxMessageReq.MessageSet thisSet : resp.msgsetList.keySet())
 		{
 			List<MsgSetInfo> infoList = resp.msgsetList.get(thisSet);
 			int verLimit = 99;
 			int maxVer;
-			float thisVer = 0;
 			for(;;)
 			{
 				maxVer = 0;
@@ -198,7 +197,7 @@ public class OfxProfile
 				{
 					if(info.ver > maxVer && info.ver < verLimit) maxVer = info.ver;
 				}
-				thisVer = ((float)((int)ofxVer)) + ((float)maxVer)/10;
+				float thisVer = ((float)((int)ofxVer)) + ((float)maxVer)/10;
 				if(maxVer > 0 && !isVersionAcceptible(thisVer))
 				{
 					verLimit = maxVer;
@@ -235,8 +234,6 @@ public class OfxProfile
 					{
 						newMap.put(thisSet, info);
 					}
-					
-					newVers.put(thisSet, thisVer);
 				}
 			}
 		}
@@ -246,7 +243,6 @@ public class OfxProfile
 		this.endpoints = newEPs;
 		this.realms = newRealms;
 		this.msgsetMap = newMap;
-		this.msgsetVer = newVers; 
 	}
 
 	private boolean isVersionAcceptible(float msgsetVer)
@@ -256,12 +252,8 @@ public class OfxProfile
 
 	public float getMsgsetVer(float ofxVer, OfxMessageReq.MessageSet thisSet)
 	{
-		if(this.msgsetVer == null || !this.msgsetVer.containsKey(thisSet))
-		{
-			return ((float)((int)ofxVer)) + 0.1f;
-		} else {
-			return this.msgsetVer.get(thisSet);
-		}
+		MsgSetInfo info = getInfo(thisSet);
+		return ((float)((int)ofxVer)) + (info == null ? 0.1f : ((float)info.ver) / 10);
 	}
 
 	public MsgSetInfo getInfo(OfxMessageReq.MessageSet thisSet)
@@ -342,5 +334,10 @@ public class OfxProfile
         if(this.fidef.fiID != null) son.fiID = this.fidef.fiID;
         if(this.fidef.fiOrg != null) son.fiOrg = this.fidef.fiOrg;
         return son;
+	}
+	
+	public boolean requiresRealmPrompt()
+	{
+		return this.realms != null && this.realms.size() > 1;
 	}
 }
