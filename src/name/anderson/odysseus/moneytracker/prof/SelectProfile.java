@@ -1,14 +1,11 @@
 package name.anderson.odysseus.moneytracker.prof;
 
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.util.List;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import android.app.*;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
-import android.content.Intent;
+import android.content.*;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.os.*;
@@ -21,6 +18,7 @@ public class SelectProfile extends ListActivity implements Runnable
 	private static final int[] LIST_IDS = { android.R.id.text1 };
 	private static final int SELECT_PROFILE = 1001;
 	private OfxFiDefTable db;
+	private String filterText;
 	ProgressDialog prog;
 	private Thread updateThread;
 	ForeignDefList[] deflistProviders;
@@ -29,6 +27,10 @@ public class SelectProfile extends ListActivity implements Runnable
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+		if(savedInstanceState != null)
+		{
+			this.filterText = savedInstanceState.getString("filterText");
+		}
 		db = new OfxFiDefTable(this);
 		deflistProviders = new ForeignDefList[] { new MoneydanceDefList(), new OfxHomeDefList() };
 		
@@ -38,7 +40,7 @@ public class SelectProfile extends ListActivity implements Runnable
 		}
 		catch(SQLiteException e)
 		{
-			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to open profile store", "Internal Error", new OnClickListener()
+			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to open profile store", "Internal Error", new DialogInterface.OnClickListener()
 			{
 				public void onClick(DialogInterface dialog, int which)
 				{
@@ -46,6 +48,7 @@ public class SelectProfile extends ListActivity implements Runnable
 				}
 			});
 			dlg.show();
+			return;
 		}
 		if(db.requiresUpdate())
 		{
@@ -123,7 +126,8 @@ public class SelectProfile extends ListActivity implements Runnable
 			{
 				public Cursor runQuery(CharSequence constraint)
 				{
-					return db.defList(constraint.toString());
+					filterText = constraint.toString();
+					return db.defList(filterText);
 				}
 			});
 			setListAdapter(adapter);
@@ -131,6 +135,10 @@ public class SelectProfile extends ListActivity implements Runnable
 			ListView lv = getListView();
 			lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 			lv.setTextFilterEnabled(true);
+			if(this.filterText != null)
+			{
+				lv.setFilterText(this.filterText);
+			}
 			lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
 			{
 				@Override
@@ -148,6 +156,13 @@ public class SelectProfile extends ListActivity implements Runnable
 	}
 	
 	@Override
+	protected void onSaveInstanceState(Bundle outState)
+	{
+		super.onSaveInstanceState(outState);
+		if(this.filterText != null) outState.putString("filterText", this.filterText);
+	}
+	
+	@Override
 	protected void onDestroy()
 	{
 		if(updateThread != null)
@@ -162,12 +177,14 @@ public class SelectProfile extends ListActivity implements Runnable
 			db = null;
 		}
 		deflistProviders = null;
+		super.onDestroy();
 	}
 
 	private Handler errHandler = new Handler()
 	{
 		public void handleMessage(Message msg)
 		{
+			super.handleMessage(msg);
 			if(msg.what == 0)
 			{
 				buildView();
@@ -202,18 +219,24 @@ public class SelectProfile extends ListActivity implements Runnable
 	@Override
 	public void run()
 	{
-		try {
+//		try {
 			for(ForeignDefList entry : deflistProviders)
 			{
 				syncForeignDefList(entry);
 			}
 			errHandler.sendEmptyMessage(0);
-			prog.dismiss();
-		} catch (Throwable e) {
-			// last chance handler
-			e.printStackTrace();
-			//throw(e);
-		}
+			try {
+				prog.dismiss();
+			}
+			catch(IllegalArgumentException e)
+			{	// this may happen due to race conditions on activity shutdown?
+				e.printStackTrace();
+			}
+//		} catch (Throwable e) {
+//			// last chance handler
+//			e.printStackTrace();
+//			//throw(e);
+//		}
 	}
 	
 	private void syncForeignDefList(ForeignDefList fgnDefList)

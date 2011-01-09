@@ -2,6 +2,7 @@ package name.anderson.odysseus.moneytracker.prof;
 
 import android.app.*;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteException;
 import android.os.*;
 import android.text.TextUtils;
@@ -42,6 +43,7 @@ public class VerifyProfile extends Activity implements Runnable
 			if(savedInstanceState.containsKey("appId")) this.profile.fidef.appId = savedInstanceState.getString("appId");
 			if(savedInstanceState.containsKey("appVer")) this.profile.fidef.appVer = savedInstanceState.getInt("appVer");
 			if(savedInstanceState.containsKey("useExpectContinue")) this.profile.useExpectContinue = savedInstanceState.getBoolean("useExpectContinue");
+			if(savedInstanceState.containsKey("prof_id")) this.profile.ID = savedInstanceState.getInt("prof_id");
 		}
 		
 		beginNegotiation();
@@ -57,6 +59,7 @@ public class VerifyProfile extends Activity implements Runnable
 			outState.putString("appId", this.profile.fidef.appId);
 			outState.putInt("appVer", this.profile.fidef.appVer);
 			outState.putBoolean("useExpectContinue", this.profile.useExpectContinue);
+			outState.putInt("prof_id", this.profile.ID);
 		}
 	}
 	
@@ -244,6 +247,8 @@ public class VerifyProfile extends Activity implements Runnable
 		finish();
 	}
 
+	private static final int BEGIN_LOGIN = 1234;
+	
 	private void profileSelected()
 	{
 		ProfileTable db = new ProfileTable(this);
@@ -256,13 +261,20 @@ public class VerifyProfile extends Activity implements Runnable
 		{
 			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to store profile", "Internal Error", null);
 			dlg.show();
+			return;
 		}
 		finally
 		{
 			db.close();
 		}
-		// TODO Auto-generated method stub
-		int i = 0;
+		
+		int _i = 0;
+//		Intent nextIntent = new Intent(this, profile.requiresRealmPrompt() ? RealmLogin.class : Login.class);
+		Intent nextIntent = new Intent(this, RealmLogin.class);
+		Bundle bdl = new Bundle();
+		bdl.putInt("prof_id", profile.ID);
+		nextIntent.putExtras(bdl);
+		startActivityForResult(nextIntent, BEGIN_LOGIN);
 	}
 
 	private static final int QH_OK = 0;
@@ -276,15 +288,17 @@ public class VerifyProfile extends Activity implements Runnable
 	
 	private Handler queryHandler = new Handler()
 	{
+		private DialogInterface.OnClickListener cancelOnClick = new DialogInterface.OnClickListener()
+		{
+			public void onClick(DialogInterface dialog, int which)
+			{
+				cancel();
+			}
+		};
+
 		private void doAlert(Exception e, String msg)
 		{
-			AlertDialog dlg = Utilities.buildAlert(VerifyProfile.this, e, msg, "Negotiation Error", new DialogInterface.OnClickListener()
-			{
-				public void onClick(DialogInterface dialog, int which)
-				{
-					cancel();
-				}
-			});
+			AlertDialog dlg = Utilities.buildAlert(VerifyProfile.this, e, msg, "Negotiation Error", cancelOnClick);
 			dlg.show();
 		}
 
@@ -301,13 +315,7 @@ public class VerifyProfile extends Activity implements Runnable
 					beginNegotiation();
 				}
 			});
-			dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
-			{
-				public void onClick(DialogInterface dialog, int which)
-				{
-					cancel();
-				}
-			});
+			dialog.setNegativeButton("Cancel", cancelOnClick);
 			
 			AlertDialog dlg = dialog.create();
 			dlg.show();

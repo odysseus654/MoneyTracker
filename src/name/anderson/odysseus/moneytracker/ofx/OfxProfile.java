@@ -338,6 +338,6 @@ public class OfxProfile
 	
 	public boolean requiresRealmPrompt()
 	{
-		return this.realms != null && this.realms.size() > 1;
+		return this.realms != null && this.realms.size() > 1 && !this.fidef.simpleProf;
 	}
 }

@@ -15,7 +15,8 @@ public final class Utilities
 	{
 		AlertDialog.Builder dialog = new AlertDialog.Builder(ctx);
 		dialog.setTitle(title);
-		String dispMsg = msg + "\n\n" + e.getMessage();
+		String dispMsg = msg;
+		if(e != null) msg = msg + "\n\n" + e.getMessage();
 		dialog.setMessage(dispMsg);
 		dialog.setNeutralButton("Ok", listen);
 		return dialog.create();

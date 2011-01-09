@@ -48,4 +48,22 @@
 	<string name="verify_profile_prof_faxphone">Fax:</string>
 	<string name="verify_profile_prof_url">Web:</string>
 	<string name="verify_profile_prof_email">Email:</string>
+	<string name="realm_login_title">Choose the area to login to</string>
+	<string-array name="message_set">
+		<item>Login</item>
+		<item>Create Account</item>
+		<item>Bank Accounts</item>
+		<item>Credit Cards</item>
+		<item>Loans</item>
+		<item>Investments</item>
+		<item>Funds Transfers</item>
+		<item>Wire Transfers</item>
+		<item>Bill Payments</item>
+		<item>Emails</item>
+		<item>Investment Securities</item>
+		<item>Biller Directory</item>
+		<item>Bill Delivery</item>
+		<item>Information</item>
+		<item>Image Download</item>
+	</string-array>
 </resources>
