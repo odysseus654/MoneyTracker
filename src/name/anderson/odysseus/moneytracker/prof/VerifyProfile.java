@@ -36,8 +36,28 @@ public class VerifyProfile extends Activity implements Runnable
 		
 		// build this definition into a profile
 		this.profile = new OfxProfile(fidef);
+		if(savedInstanceState != null)
+		{
+			if(savedInstanceState.containsKey("ofxVer")) this.profile.fidef.ofxVer = savedInstanceState.getFloat("ofxVer");
+			if(savedInstanceState.containsKey("appId")) this.profile.fidef.appId = savedInstanceState.getString("appId");
+			if(savedInstanceState.containsKey("appVer")) this.profile.fidef.appVer = savedInstanceState.getInt("appVer");
+			if(savedInstanceState.containsKey("useExpectContinue")) this.profile.useExpectContinue = savedInstanceState.getBoolean("useExpectContinue");
+		}
 		
 		beginNegotiation();
+	}
+	
+	@Override
+	protected void onSaveInstanceState(Bundle outState)
+	{
+		super.onSaveInstanceState(outState);
+		if(this.profile != null && this.profile.fidef != null)
+		{
+			outState.putFloat("ofxVer", this.profile.fidef.ofxVer);
+			outState.putString("appId", this.profile.fidef.appId);
+			outState.putInt("appVer", this.profile.fidef.appVer);
+			outState.putBoolean("useExpectContinue", this.profile.useExpectContinue);
+		}
 	}
 	
 	void beginNegotiation()
@@ -280,7 +300,16 @@ public class VerifyProfile extends Activity implements Runnable
 
 		public void handleMessage(Message msg)
 		{
-			prog.dismiss();
+			super.handleMessage(msg);
+
+			try
+			{
+				prog.dismiss();
+			}
+			catch(IllegalArgumentException e)
+			{	// this may happen due to race conditions on activity shutdown?
+				e.printStackTrace();
+			}
 			if(msg.obj == null)
 			{
 				buildView();
@@ -328,6 +357,7 @@ public class VerifyProfile extends Activity implements Runnable
 	
 	private void sendExceptionMsg(int what, Exception e)
 	{
+		e.printStackTrace();
 		Message msg = Message.obtain();
 		msg.obj = e;
 		msg.what = what;
@@ -337,7 +367,7 @@ public class VerifyProfile extends Activity implements Runnable
 	@Override
 	public void run()
 	{
-		try {
+//		try {
 			try {
 				profile.negotiate();
 			} catch (HttpResponseException e) {
@@ -356,10 +386,10 @@ public class VerifyProfile extends Activity implements Runnable
 				sendExceptionMsg(QH_ERR, e);
 			}
 			queryHandler.sendEmptyMessage(QH_OK);
-		} catch (Throwable e) {
-			// last chance handler
-			e.printStackTrace();
-			//throw(e);
-		}
+//		} catch (Throwable e) {
+//			// last chance handler
+//			e.printStackTrace();
+//			//throw(e);
+//		}
 	}
 }

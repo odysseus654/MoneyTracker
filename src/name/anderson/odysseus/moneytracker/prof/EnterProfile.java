@@ -39,7 +39,12 @@ public class EnterProfile extends Activity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.enter_profile);
 		
-		this.baseDef = new OfxFiDefinition(getIntent().getExtras());
+		if(savedInstanceState != null)
+		{
+			this.baseDef = new OfxFiDefinition(savedInstanceState);
+		} else {
+			this.baseDef = new OfxFiDefinition(getIntent().getExtras());
+		}
 		this.name = baseDef.name;
 		this.fiURL = baseDef.fiURL;
 		this.fiOrg = baseDef.fiOrg;
@@ -49,12 +54,20 @@ public class EnterProfile extends Activity
 		this.ofxVer = (int) baseDef.ofxVer;
 		this.simpleProf = baseDef.simpleProf;
 
-		this.fiNeeded = (this.fiOrg != null) && (this.fiID != null);
-		this.appNeeded = (this.appId != null);
-		if(!this.appNeeded)
+		if(savedInstanceState != null)
 		{
-			this.appId = "QWIN";
-			this.appVer = 1900;
+			this.fiNeeded = savedInstanceState.getBoolean("fiNeeded");
+			this.appNeeded = savedInstanceState.getBoolean("appNeeded");
+			this.appId = savedInstanceState.getString("appId");
+			this.appVer = savedInstanceState.getInt("appVer");
+		} else {
+			this.fiNeeded = (this.fiOrg != null) && (this.fiID != null);
+			this.appNeeded = (this.appId != null);
+			if(!this.appNeeded)
+			{
+				this.appId = "QWIN";
+				this.appVer = 1900;
+			}
 		}
 		
 		Spinner ofxVer = (Spinner)findViewById(R.id.OfxVersion);
@@ -66,18 +79,34 @@ public class EnterProfile extends Activity
 		pushData();
 	}
 	
-	void profileSelected()
+	private void rebuildProfile()
 	{
 		// assemble the profile
 		if(this.baseDef == null) this.baseDef = new OfxFiDefinition();
 		baseDef.name = this.name.toString();
 		baseDef.fiURL = this.fiURL.toString();
-		baseDef.fiOrg = this.fiOrg.toString();
-		baseDef.fiID = this.fiID.toString();
-		baseDef.appId = this.appId.toString();
-		baseDef.appVer = this.appVer;
+		if(this.fiNeeded)
+		{
+			baseDef.fiOrg = this.fiOrg.toString();
+			baseDef.fiID = this.fiID.toString();
+		} else {
+			baseDef.fiOrg = null;
+			baseDef.fiID = null;
+		}
+		if(this.appNeeded)
+		{
+			baseDef.appId = this.appId.toString();
+			baseDef.appVer = this.appVer;
+		} else {
+			baseDef.appId = null;
+		}
 		baseDef.ofxVer = OFX_VERS[this.ofxVer];
 		baseDef.simpleProf = this.simpleProf;
+	}
+	
+	void profileSelected()
+	{
+		rebuildProfile();
 
 		// now chain to the verify step
 		Intent verifyProf = new Intent(EnterProfile.this, VerifyProfile.class);
@@ -85,6 +114,18 @@ public class EnterProfile extends Activity
 		this.baseDef.push(bdl);
 		verifyProf.putExtras(bdl);
 		startActivityForResult(verifyProf, SELECT_PROFILE);
+	}
+	
+	@Override
+	protected void onSaveInstanceState(Bundle outState)
+	{
+		super.onSaveInstanceState(outState);
+		rebuildProfile();
+		this.baseDef.push(outState);
+		outState.putBoolean("fiNeeded", this.fiNeeded);
+		outState.putBoolean("appNeeded", this.appNeeded);
+		outState.putString("appId", this.appId.toString());
+		outState.putInt("appVer", this.appVer);
 	}
 	
 	private void doBindings()
