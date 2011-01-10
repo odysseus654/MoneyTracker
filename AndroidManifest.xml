@@ -8,12 +8,14 @@
 				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
-		<activity android:name=".prof.EnterProfile" android:label="@string/enter_profile_title"></activity>
-		<activity android:name=".prof.SelectProfile" android:label="@string/select_profile_title"></activity>
-		<activity android:name=".prof.VerifyProfile" android:label="@string/verify_profile_title"></activity>
-		<activity android:name=".prof.RealmLogin" android:label="@string/realm_login_title"></activity>
+		<activity android:name=".prof.EnterProfile" android:label="@string/enter_profile_title" />
+		<activity android:name=".prof.SelectProfile" android:label="@string/select_profile_title" />
+		<activity android:name=".prof.VerifyProfile" android:label="@string/verify_profile_title" />
+		<activity android:name=".prof.RealmLogin" android:label="@string/realm_login_title" />
+		<activity android:name=".prof.Login" android:label="@string/login_title" />
 	</application>
 
-	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
-	<uses-sdk android:minSdkVersion="4"></uses-sdk>
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+	<uses-sdk android:minSdkVersion="4" />
 </manifest> 

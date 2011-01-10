@@ -14,7 +14,7 @@ import name.anderson.odysseus.moneytracker.ofx.*;
 public class SignonMsgReq extends OfxMessageReq
 {
 	public String userid;
-	public String userpass;
+	public String userpass;			// secure
 	public boolean reqUserkey;
 	public String userkey;
 	public String fiID;
@@ -24,12 +24,12 @@ public class SignonMsgReq extends OfxMessageReq
 	public String appId;
 	public int appVer;
 	public String clientUid;
-	public String userCred1;
-	public String userCred2;
-	public String authToken;
+	public String userCred1;		// secure
+	public String userCred2;		// secure
+	public String authToken;		// secure
 	public String accessKey;
 	public List<MfaChallenge> mfaChallenges;
-	
+
 	public class MfaChallenge
 	{
 		public String phraseID;

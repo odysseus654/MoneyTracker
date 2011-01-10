@@ -95,8 +95,13 @@ public class OfxRequest
 
 		return FormatHeader(false, this.version) + req.Format(this.version);
 	}
-
+	
 	public Reader submit() throws IOException
+	{
+		return submit(false);
+	}
+
+	public Reader submit(boolean noAutoSon) throws IOException
 	{
 		SortedMap<String, TransferObject> requests = new TreeMap<String, TransferObject>();
 		Set<String> encrypted = new TreeSet<String>();
@@ -146,11 +151,14 @@ public class OfxRequest
 					req = new TransferObject("OFX");
 					requests.put(endpoint, req);
 
-					thisSon = this.anonymous ? profile.createAnonymousSignon() : profile.createSignon(thisSet);
-					if(thisSon != null && thisSet != OfxMessageReq.MessageSet.SIGNON)
+					if(!noAutoSon)
 					{
-						req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
-								this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON), thisSon));
+						thisSon = this.anonymous ? profile.createAnonymousSignon() : profile.createSignon(thisSet);
+						if(thisSon != null && thisSet != OfxMessageReq.MessageSet.SIGNON)
+						{
+							req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
+									this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON), thisSon));
+						}
 					}
 				}
 				req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), msgsetVer, thisSon));

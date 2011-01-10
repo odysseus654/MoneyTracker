@@ -5,10 +5,10 @@ import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.*;
 import name.anderson.odysseus.moneytracker.ofx.prof.MsgSetInfo;
-import name.anderson.odysseus.moneytracker.ofx.prof.SignonRealm;
 import android.app.*;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
 import android.view.*;
@@ -126,22 +126,27 @@ public class RealmLogin extends ListActivity
     
 	private RealmInfo[] buildRealmList()
 	{
-		Map<SignonRealm,RealmInfo> realmMembers = new TreeMap<SignonRealm,RealmInfo>();
+		Map<String,RealmInfo> realmMembers = new TreeMap<String,RealmInfo>();
 
 		for(OfxMessageReq.MessageSet msgset : profile.msgsetMap.keySet())
 		{
-			MsgSetInfo info = profile.msgsetMap.get(msgset);
-			if(info.core.realm != null)
+			if(msgset != OfxMessageReq.MessageSet.SIGNON && msgset != OfxMessageReq.MessageSet.SIGNUP
+					&& msgset != OfxMessageReq.MessageSet.PROF)
 			{
-				RealmInfo rinfo;
-				if(!realmMembers.containsKey(info.core.realm))
+				MsgSetInfo info = profile.msgsetMap.get(msgset);
+				if(info.core.realm != null)
 				{
-					rinfo = new RealmInfo(info.core.realm.name);
-					realmMembers.put(info.core.realm, rinfo);
-				} else {
-					rinfo = realmMembers.get(info.core.realm);
+					RealmInfo rinfo;
+					String rname = info.core.realm.name;
+					if(!realmMembers.containsKey(rname))
+					{
+						rinfo = new RealmInfo(rname);
+						realmMembers.put(rname, rinfo);
+					} else {
+						rinfo = realmMembers.get(rname);
+					}
+					rinfo.members.add(msgset);
 				}
-				rinfo.members.add(msgset);
 			}
 		}
 		
@@ -178,8 +183,16 @@ public class RealmLogin extends ListActivity
 		finish();
 	}
 	
+	private static final int BEGIN_LOGIN = 1234;
+	
 	void realmSelected(RealmInfo realm)
 	{
 		int _i = 0;
+		Intent nextIntent = new Intent(this, Login.class);
+		Bundle bdl = new Bundle();
+		bdl.putInt("prof_id", profile.ID);
+		bdl.putString("login_realm", realm.name);
+		nextIntent.putExtras(bdl);
+		startActivityForResult(nextIntent, BEGIN_LOGIN);
 	}
 }

@@ -74,7 +74,7 @@ public class VerifyProfile extends Activity implements Runnable
 			}
 		});
 		
-		queryThread = new Thread(this);
+		queryThread = new Thread(this, "Negotiate Thread");
 		queryThread.setDaemon(true);
 		queryThread.start();
 	}
@@ -269,8 +269,7 @@ public class VerifyProfile extends Activity implements Runnable
 		}
 		
 		int _i = 0;
-//		Intent nextIntent = new Intent(this, profile.requiresRealmPrompt() ? RealmLogin.class : Login.class);
-		Intent nextIntent = new Intent(this, RealmLogin.class);
+		Intent nextIntent = new Intent(this, profile.requiresRealmPrompt() ? RealmLogin.class : Login.class);
 		Bundle bdl = new Bundle();
 		bdl.putInt("prof_id", profile.ID);
 		nextIntent.putExtras(bdl);

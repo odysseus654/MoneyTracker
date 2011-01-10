@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/ScrollView" android:layout_width="fill_parent" android:layout_height="fill_parent" >
+<RelativeLayout android:id="@+id/RelativeLayout01" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:paddingRight="5dp">
+
+<TextView android:layout_alignParentTop="true" android:layout_width="fill_parent"
+	android:id="@+id/UserPrompt" android:layout_height="wrap_content"
+	android:text="@string/login_id" />
+<EditText android:layout_below="@id/UserPrompt" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:id="@+id/UserEdit" />
+
+<TextView android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:id="@+id/PassPrompt" android:text="@string/login_pass"
+	android:layout_below="@id/UserEdit" />
+<EditText android:layout_below="@id/PassPrompt" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:id="@+id/PassEdit"
+	android:inputType="textPassword" />
+
+<RelativeLayout android:id="@+id/Cred1Block" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:layout_below="@id/PassEdit">
+	<TextView android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:id="@+id/Cred1Prompt" android:text="'PLACEHOLDER'"
+		android:layout_alignParentTop="true" />
+	<EditText android:layout_below="@id/Cred1Prompt" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:id="@+id/Cred1Edit" />
+</RelativeLayout>
+
+<RelativeLayout android:id="@+id/Cred2Block" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:layout_below="@id/Cred1Block">
+	<TextView android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:id="@+id/Cred2Prompt" android:text="'PLACEHOLDER'"
+		android:layout_alignParentTop="true" />
+	<EditText android:layout_below="@id/Cred2Prompt" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:id="@+id/Cred2Edit" />
+</RelativeLayout>
+
+<RelativeLayout android:id="@+id/TokenBlock" android:layout_width="fill_parent"
+	android:layout_height="wrap_content" android:layout_below="@id/Cred2Block">
+	<TextView android:layout_width="fill_parent" android:layout_height="wrap_content"
+		android:id="@+id/TokenPrompt" android:text="'PLACEHOLDER'"
+		android:layout_alignParentTop="true" />
+	<EditText android:layout_below="@id/TokenPrompt" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:id="@+id/TokenEdit" />
+</RelativeLayout>
+
+<!-- List<MfaChallenge> mfaChallenges -->
+
+<!-- end buttons -->
+<LinearLayout android:layout_width="fill_parent" android:layout_height="wrap_content"
+	android:layout_below="@id/TokenBlock" >
+	<Button android:text="@string/cont" android:layout_width="fill_parent"
+		android:id="@+id/OkButton" android:layout_height="wrap_content" android:layout_weight="1" />
+	<Button android:text="@string/cancel" android:layout_width="fill_parent"
+		android:id="@+id/CancelButton" android:layout_height="wrap_content" android:layout_weight="1" />
+</LinearLayout>
+
+</RelativeLayout>
+</ScrollView>

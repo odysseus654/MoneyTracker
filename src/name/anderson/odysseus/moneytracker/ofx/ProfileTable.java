@@ -22,7 +22,7 @@ public class ProfileTable
 	private final Context context;
 	private final OfxFiDefOpenHelper dbhelper;
 	
-	private static final String DATABASE_NAME = "profile";
+	private static final String DATABASE_NAME = "profiles.db";
 	private static final int DATABASE_VERSION = 1;
 
 	private static final int FI_SIMPLE_PROF = 1;
@@ -39,13 +39,19 @@ public class ProfileTable
 	private static final int RM_SPACES_ALLOWED = 4;
 	private static final int RM_CHANGE_PASS_ALLOWED = 8;
 	private static final int RM_CHANGE_PASS_FIRST = 16;
+	private static final int RM_CLIENT_UID_REQ = 32;
+	private static final int RM_AUTH_TOKEN_FIRST = 64;
+	private static final int RM_MFA_SUPPORTED = 128;
+	private static final int RM_MFA_FIRST = 256;
 	
 	private static final String[] FI_COLS =
 	{ "lang", "prof_age", "flags", "name", "url", "fi_org", "fi_id", "app_id", "app_ver", "ofx_ver",
 		"prof_name", "prof_addr1", "prof_addr2", "prof_addr3", "prof_city", "prof_state", "prof_postal",
 		"prof_country", "prof_csphone", "prof_tsphone", "prof_faxphone", "prof_url", "prof_email" };
 	private static final String[] EP_COLS = { "msgset", "ver", "url", "realm", "mode", "spname", "flags" };
-	private static final String[] RM_COLS = { "name", "min_chars", "max_chars", "char_type", "pass_type", "flags" };
+	private static final String[] RM_COLS =
+	{ "name", "min_chars", "max_chars", "char_type", "pass_type", "flags", "user1_label", "user2_label",
+		"token_label", "token_url" };
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
@@ -68,7 +74,8 @@ public class ProfileTable
 			");",
 			"CREATE TABLE realm (" +
 			"_id integer primary key autoincrement, fi integer not null, name text not null, " +
-			"min_chars integer, max_chars integer, char_type integer, flags integer, pass_type integer" +
+			"min_chars integer, max_chars integer, char_type integer, flags integer, pass_type integer, " +
+			"user1_label text, user2_label text, token_label text, token_url text" +
 			");"
 		};
 		private static final String[] DROP_TABLE =
@@ -243,12 +250,21 @@ public class ProfileTable
 				realm.maxChars = cur.getInt(2);
 				realm.chartype = cur.getInt(3);
 				realm.passType = cur.getInt(4);
+				realm.userCred1Label = cur.getString(6);
+				realm.userCred2Label = cur.getString(7);
+				realm.authTokenLabel = cur.getString(8);
+				realm.authTokenInfoURL = cur.getString(9);
+
 				int flags = cur.getInt(5);
 				realm.caseSensitive = (flags & RM_CASE_SENSITIVE) != 0;
 				realm.specialAllowed = (flags & RM_SPECIAL_ALLOWED) != 0;
 				realm.spacesAllowed = (flags & RM_SPACES_ALLOWED) != 0;
 				realm.changePassAllowed = (flags & RM_CHANGE_PASS_ALLOWED) != 0;
 				realm.changePassFirst = (flags & RM_CHANGE_PASS_FIRST) != 0;
+				realm.clientUidReq = (flags & RM_CLIENT_UID_REQ) != 0;
+				realm.authTokenFirst = (flags & RM_AUTH_TOKEN_FIRST) != 0;
+				realm.mfaSupported = (flags & RM_MFA_SUPPORTED) != 0;
+				realm.mfaFirst = (flags & RM_MFA_FIRST) != 0;
 				if(profile.realms == null) profile.realms = new TreeMap<String,SignonRealm>();
 				profile.realms.put(realm.name, realm);
 			}
@@ -407,6 +423,10 @@ public class ProfileTable
 				newValue.put("max_chars", realm.maxChars);
 				newValue.put("char_type", realm.chartype);
 				newValue.put("pass_type", realm.passType);
+				newValue.put("user1_label", realm.userCred1Label);
+				newValue.put("user2_label", realm.userCred2Label);
+				newValue.put("token_label", realm.authTokenLabel);
+				newValue.put("token_url", realm.authTokenInfoURL);
 
 				int flags = 0;
 				if(realm.caseSensitive) flags = flags | RM_CASE_SENSITIVE;
@@ -414,6 +434,10 @@ public class ProfileTable
 				if(realm.spacesAllowed) flags = flags | RM_SPACES_ALLOWED;
 				if(realm.changePassAllowed) flags = flags | RM_CHANGE_PASS_ALLOWED;
 				if(realm.changePassFirst) flags = flags | RM_CHANGE_PASS_FIRST;
+				if(realm.clientUidReq) flags = flags | RM_CLIENT_UID_REQ;
+				if(realm.authTokenFirst) flags = flags | RM_AUTH_TOKEN_FIRST;
+				if(realm.mfaSupported) flags = flags | RM_MFA_SUPPORTED;
+				if(realm.mfaFirst) flags = flags | RM_MFA_FIRST;
 				newValue.put("flags", flags);
 
 				db.insertOrThrow("realm", "name", newValue);

@@ -19,7 +19,7 @@ public class OfxFiDefTable
 	private final Context context;
 	private final OfxFiDefOpenHelper dbhelper;
 	
-	private static final String DATABASE_NAME = "profile";
+	private static final String DATABASE_NAME = "fidef.db";
 	private static final int DATABASE_VERSION = 1;
 	private static final String TABLE_NAME = "def";
 	private static final String[] COLS_SRCID = {"src_id"};

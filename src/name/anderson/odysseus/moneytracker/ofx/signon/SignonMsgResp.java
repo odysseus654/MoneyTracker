@@ -24,6 +24,22 @@ public class SignonMsgResp extends OfxMessageResp
 	public String fiOrg;
 	public String sessCookie;
 	public String accessKey;
+
+	public static final int STATUS_SUCCESS = 0;
+	public static final int STATUS_ERROR = 2000;
+	public static final int STATUS_MFA_REQUIRED = 3000;
+	public static final int STATUS_MFA_INVALID = 3001;
+	public static final int STATUS_FI_INVALID = 13504;
+	public static final int STATUS_PINCH_NEEDED = 15000;
+	public static final int STATUS_BAD_LOGIN = 15500;
+	public static final int STATUS_ACCT_BUSY = 15501;
+	public static final int STATUS_ACCT_LOCKED = 15502;
+	public static final int STATUS_EMPTY_REQUEST = 15506;
+	public static final int STATUS_PINCH_REQUIRED = 15507;
+	public static final int STATUS_CLIENTUID_REJECTED = 15510;
+	public static final int STATUS_CALL_US = 15511;
+	public static final int STATUS_AUTHTOKEN_REQUIRED = 15512;
+	public static final int STATUS_AUTHTOKEN_INVALID = 15513;
 /*
 	public SignonMsgResp()
 	{

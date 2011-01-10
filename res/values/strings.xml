@@ -66,4 +66,34 @@
 		<item>Information</item>
 		<item>Image Download</item>
 	</string-array>
+	<string name="login_title">Enter login information</string>
+	<string-array name="mfa_phrases">
+		<item />
+		<item>City of birth</item>
+		<item>Date of birth MM/DD/YYYY</item>
+		<item>Debit card number</item>
+		<item>Father\&apos;s middle name</item>
+		<item>Favorite color</item>
+		<item>First pet\&apos;s name</item>
+		<item>Five digit ZIP code</item>
+		<item>Grandmother\&apos;s maiden name on your father\&apos;s side</item>
+		<item>Grandmother\&apos;s maiden name on your mother\&apos;s side</item>
+		<item>Last four digits of your cell phone number</item>
+		<item>Last four digits of your daytime phone number</item>
+		<item>Last four digits of your home phone number</item>
+		<item>Last four digits of your social security number</item>
+		<item>Last four digits of your Tax ID</item>
+		<item>Month of birth of youngest sibling (do not abbreviate)</item>
+		<item>Mother\&apos;s maiden name</item>
+		<item>Mother\&apos;s middle name</item>
+		<item>Name of the company where you had your first job</item>
+		<item>Name of the manufacturer of your first car</item>
+		<item>Name of your high school football team, do not include high school name, e.g. \&quot;Beavers\&quot; rather than \&quot;Central High Beavers\&quot;</item>
+		<item>Recent deposit or recent withdrawal amount</item>
+		<item>Year of birth, use YYYY</item>
+	</string-array>
+	<string name="login_id">Login name:</string>
+	<string name="login_pass">Password or PIN:</string>
+	<string name="login_pwtype_onetime">One-time password given by your bank:</string>
+	<string name="login_pwtype_hwtoken">Code from your keyfob or similar device:</string>
 </resources>

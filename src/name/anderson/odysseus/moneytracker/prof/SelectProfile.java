@@ -111,7 +111,7 @@ public class SelectProfile extends ListActivity implements Runnable
 			}
 		});
 		
-		updateThread = new Thread(this);
+		updateThread = new Thread(this, "Download Thread");
 		updateThread.setDaemon(true);
 		updateThread.start();
 	}
