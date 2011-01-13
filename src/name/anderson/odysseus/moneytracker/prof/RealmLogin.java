@@ -134,10 +134,10 @@ public class RealmLogin extends ListActivity
 					&& msgset != OfxMessageReq.MessageSet.PROF)
 			{
 				MsgSetInfo info = profile.msgsetMap.get(msgset);
-				if(info.core.realm != null)
+				if(info.realm != null)
 				{
 					RealmInfo rinfo;
-					String rname = info.core.realm.name;
+					String rname = info.realm.name;
 					if(!realmMembers.containsKey(rname))
 					{
 						rinfo = new RealmInfo(rname);

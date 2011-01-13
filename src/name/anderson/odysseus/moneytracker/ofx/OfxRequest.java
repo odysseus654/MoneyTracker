@@ -136,7 +136,7 @@ public class OfxRequest
 				if(!profile.ignoreEncryption)
 				{
 					MsgSetInfo info = profile.getInfo(thisSet);
-					if(info != null && info.core.securePass && !encrypted.contains(endpoint))
+					if(info != null && info.securePass && !encrypted.contains(endpoint))
 					{
 						encrypted.add(endpoint);
 					}

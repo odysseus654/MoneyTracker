@@ -33,6 +33,7 @@ public class ProfileTable
 	private static final int EP_SECURE_PASS = 1;
 	private static final int EP_SUPPORTS_REFRESH = 2;
 	private static final int EP_SUPPORTS_RECOVERY = 4;
+	private static final int EP_SUPPORTS_FULL_SYNC = 8;
 
 	private static final int RM_CASE_SENSITIVE = 1;
 	private static final int RM_SPECIAL_ALLOWED = 2;
@@ -48,7 +49,7 @@ public class ProfileTable
 	{ "lang", "prof_age", "flags", "name", "url", "fi_org", "fi_id", "app_id", "app_ver", "ofx_ver",
 		"prof_name", "prof_addr1", "prof_addr2", "prof_addr3", "prof_city", "prof_state", "prof_postal",
 		"prof_country", "prof_csphone", "prof_tsphone", "prof_faxphone", "prof_url", "prof_email" };
-	private static final String[] EP_COLS = { "msgset", "ver", "url", "realm", "mode", "spname", "flags" };
+	private static final String[] EP_COLS = { "msgset", "ver", "url", "realm", "spname", "flags" };
 	private static final String[] RM_COLS =
 	{ "name", "min_chars", "max_chars", "char_type", "pass_type", "flags", "user1_label", "user2_label",
 		"token_label", "token_url" };
@@ -70,7 +71,7 @@ public class ProfileTable
 			"CREATE TABLE endpoint (" +
 			"_id integer primary key autoincrement, fi integer not null, msgset text not null, " +
 			"ver integer not null, url text not null, flags integer not null, realm text not null, " +
-			"mode integer not null, spname text" +
+			"spname text" +
 			");",
 			"CREATE TABLE realm (" +
 			"_id integer primary key autoincrement, fi integer not null, name text not null, " +
@@ -282,17 +283,17 @@ public class ProfileTable
 				// probably need to support more types at some point
 				MsgSetInfo info = new MsgSetInfo();
 				info.ver = cur.getInt(1);
-				info.core.URL = cur.getString(2);
-				info.core.syncMode = cur.getInt(4);
-				info.core.SpName = cur.getString(5);
-				int flags = cur.getInt(6);
-				info.core.securePass = (flags & EP_SECURE_PASS) != 0;
-				info.core.supportsRefresh = (flags & EP_SUPPORTS_REFRESH) != 0;
-				info.core.supportsRecovery = (flags & EP_SUPPORTS_RECOVERY) != 0;
+				info.URL = cur.getString(2);
+				info.SpName = cur.getString(4);
+				int flags = cur.getInt(5);
+				info.securePass = (flags & EP_SECURE_PASS) != 0;
+				info.supportsRefresh = (flags & EP_SUPPORTS_REFRESH) != 0;
+				info.supportsRecovery = (flags & EP_SUPPORTS_RECOVERY) != 0;
+				info.fullSyncMode = (flags & EP_SUPPORTS_FULL_SYNC) != 0;
 				String realmName = cur.getString(3);
 				if(profile.realms != null && profile.realms.containsKey(realmName))
 				{
-					info.core.realm = profile.realms.get(realmName);
+					info.realm = profile.realms.get(realmName);
 				}
 				
 				OfxMessageReq.MessageSet msgset = OfxMessageReq.MessageSet.valueOf(cur.getString(0));
@@ -302,12 +303,12 @@ public class ProfileTable
 					if(profile.msgsetMap == null) profile.msgsetMap = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();
 
 					Endpoint ep;
-					if(profile.endpoints.containsKey(info.core.URL))
+					if(profile.endpoints.containsKey(info.URL))
 					{
-						ep = profile.endpoints.get(info.core.URL);
+						ep = profile.endpoints.get(info.URL);
 					} else {
 						ep = new Endpoint();
-						profile.endpoints.put(info.core.URL, ep);
+						profile.endpoints.put(info.URL, ep);
 					}
 					ep.msgsetInfo.put(msgset, info);
 					
@@ -396,15 +397,15 @@ public class ProfileTable
 					newValue.put("fi", profile.ID);
 					newValue.put("msgset", msgset.name());
 					newValue.put("ver", info.ver);
-					newValue.put("url", info.core.URL);
-					if(info.core.realm != null) newValue.put("realm", info.core.realm.name);
-					newValue.put("mode", info.core.syncMode);
-					newValue.put("spname", info.core.SpName);
+					newValue.put("url", info.URL);
+					if(info.realm != null) newValue.put("realm", info.realm.name);
+					newValue.put("spname", info.SpName);
 
 					int flags = 0;
-					if(info.core.securePass) flags = flags | EP_SECURE_PASS;
-					if(info.core.supportsRefresh) flags = flags | EP_SUPPORTS_REFRESH;
-					if(info.core.supportsRecovery) flags = flags | EP_SUPPORTS_RECOVERY;
+					if(info.securePass) flags = flags | EP_SECURE_PASS;
+					if(info.supportsRefresh) flags = flags | EP_SUPPORTS_REFRESH;
+					if(info.supportsRecovery) flags = flags | EP_SUPPORTS_RECOVERY;
+					if(info.fullSyncMode) flags = flags | EP_SUPPORTS_FULL_SYNC;
 					newValue.put("flags", flags);
 
 					db.insertOrThrow("endpoint", "msgset", newValue);

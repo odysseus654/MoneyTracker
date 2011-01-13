@@ -165,7 +165,7 @@ public class OfxProfile
 		// req.useExpectContinue
 	}
 	
-	public OfxRequest newRequest(boolean anon)
+	public OfxRequest newRequest()
 	{
 		OfxRequest req = new OfxRequest(this);
 		req.version = this.fidef.ofxVer;
@@ -214,16 +214,16 @@ public class OfxProfile
 				{
 					// do we have this endpoint yet?
 					Endpoint thisEP;
-					if(!newEPs.containsKey(info.core.URL))
+					if(!newEPs.containsKey(info.URL))
 					{
 						thisEP = new Endpoint();
-						newEPs.put(info.core.URL, thisEP);
+						newEPs.put(info.URL, thisEP);
 					} else {
-						thisEP = newEPs.get(info.core.URL);
+						thisEP = newEPs.get(info.URL);
 					}
 					
 					// do we have this realm yet?
-					SignonRealm realm = info.core.realm;
+					SignonRealm realm = info.realm;
 					if(realm != null && !newRealms.containsKey(realm.name))
 					{
 						newRealms.put(realm.name, realm);
@@ -278,7 +278,7 @@ public class OfxProfile
 		}
 		else
 		{
-			return this.msgsetMap.get(thisSet).core.URL;
+			return this.msgsetMap.get(thisSet).URL;
 		}
 	}
 
@@ -296,7 +296,7 @@ public class OfxProfile
 		else
 		{
 			MsgSetInfo info = this.msgsetMap.get(msgset);
-			realm = info.core.realm == null ? "" : info.core.realm.name;
+			realm = info.realm == null ? "" : info.realm.name;
 		}
 		if(this.realmLogins == null || !this.realmLogins.containsKey(realm))
 		{

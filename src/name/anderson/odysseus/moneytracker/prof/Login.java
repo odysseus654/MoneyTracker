@@ -1,25 +1,35 @@
 package name.anderson.odysseus.moneytracker.prof;
 
+import java.util.List;
+
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.OfxProfile;
 import name.anderson.odysseus.moneytracker.ofx.ProfileTable;
 import name.anderson.odysseus.moneytracker.ofx.prof.SignonRealm;
+import name.anderson.odysseus.moneytracker.ofx.signon.SignonMsgReq;
 import name.anderson.odysseus.moneytracker.ofx.signon.SignonMsgReq.MfaChallenge;
 import android.app.*;
 import android.content.DialogInterface;
 import android.database.sqlite.SQLiteException;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.view.*;
+import android.widget.*;
 
 public class Login extends Activity
 {
 	private OfxProfile profile;
 	private SignonRealm realm;
+	private SignonMsgReq lastAttempt;
 
-	private boolean requireAuthToken;
+	private boolean requireAuthToken;	// set in response to STATUS_AUTHTOKEN_REQUIRED
+	
+	CharSequence userid;
+	CharSequence userpass;
+	CharSequence userCred1;
+	CharSequence userCred2;
+	CharSequence authToken;
+	
 /*
 	public boolean reqUserkey;	// session: request
 	public String userkey;		// session: login response
@@ -119,18 +129,60 @@ public class Login extends Activity
 	
 	private void buildView()
 	{
+		EditText edit = (EditText)findViewById(R.id.UserEdit);
+		edit.setText(userid);
+		edit.setOnKeyListener(new View.OnKeyListener()
+		{
+			public boolean onKey(View v, int keyCode, KeyEvent event)
+			{
+				userid = ((EditText)v).getText();
+				return false;
+			}
+		});
+		edit = (EditText)findViewById(R.id.PassEdit);
+		edit.setText(userpass);
+		edit.setOnKeyListener(new View.OnKeyListener()
+		{
+			public boolean onKey(View v, int keyCode, KeyEvent event)
+			{
+				userpass = ((EditText)v).getText();
+				return false;
+			}
+		});
+
 		if(this.realm != null && !profile.fidef.simpleProf && this.realm.userCred1Label != null)
 		{
 			((TextView)findViewById(R.id.Cred1Prompt)).setText(this.realm.userCred1Label);
+			edit = (EditText)findViewById(R.id.Cred1Edit);
+			edit.setText(userCred1);
+			edit.setOnKeyListener(new View.OnKeyListener()
+			{
+				public boolean onKey(View v, int keyCode, KeyEvent event)
+				{
+					userCred1 = ((EditText)v).getText();
+					return false;
+				}
+			});
 		} else {
 			findViewById(R.id.Cred1Block).setVisibility(View.GONE);
 		}
 		if(this.realm != null && !profile.fidef.simpleProf && this.realm.userCred2Label != null)
 		{
 			((TextView)findViewById(R.id.Cred2Prompt)).setText(this.realm.userCred2Label);
+			edit = (EditText)findViewById(R.id.Cred2Edit);
+			edit.setText(userCred2);
+			edit.setOnKeyListener(new View.OnKeyListener()
+			{
+				public boolean onKey(View v, int keyCode, KeyEvent event)
+				{
+					userCred2 = ((EditText)v).getText();
+					return false;
+				}
+			});
 		} else {
 			findViewById(R.id.Cred2Block).setVisibility(View.GONE);
 		}
+		boolean bTokenPrompt = true;
 		if(this.realm != null && !profile.fidef.simpleProf && this.realm.passType != SignonRealm.PT_FIXED)
 		{
 			String prompt = null;
@@ -151,14 +203,69 @@ public class Login extends Activity
 		}
 		else
 		{
+			bTokenPrompt = false;
 			findViewById(R.id.TokenBlock).setVisibility(View.GONE);
 		}
-// @+id/UserEdit, @+id/PassEdit, @+id/Cred1Edit, @+id/Cred2Edit, @+id/TokenEdit
+		if(bTokenPrompt)
+		{
+			edit = (EditText)findViewById(R.id.TokenEdit);
+			edit.setText(authToken);
+			edit.setOnKeyListener(new View.OnKeyListener()
+			{
+				public boolean onKey(View v, int keyCode, KeyEvent event)
+				{
+					authToken = ((EditText)v).getText();
+					return false;
+				}
+			});
+		}
+		((Button)findViewById(R.id.OkButton)).setOnClickListener(new View.OnClickListener()
+		{
+			public void onClick(View v)
+			{
+				attemptLogin();
+			}
+		});
+
+		((Button)findViewById(R.id.CancelButton)).setOnClickListener(new View.OnClickListener()
+		{
+			public void onClick(View v)
+			{
+				cancel();
+			}
+		});
 	}
 
-	private void cancel()
+	void cancel()
 	{
 		setResult(RESULT_CANCELED);
 		finish();
 	}
+	
+	private SignonMsgReq buildLoginRequest()
+	{
+		SignonMsgReq req = profile.createAnonymousSignon();
+		req.userid = (userid == null) ? null : userid.toString();
+		req.userpass = (userpass == null) ? null : userpass.toString();
+		req.userCred1 = (userCred1 == null) ? null : userCred1.toString();
+		req.userCred2 = (userCred2 == null) ? null : userCred2.toString();
+		req.authToken = (authToken == null) ? null : authToken.toString();
+		return req;
+	}
+	
+/*
+	public boolean reqUserkey;	// session: request
+	public String userkey;		// session: login response
+	public String accessKey;	// session: mfa response
+	public String sessCookie;	// session: tracking
+	public String clientUid;		// SIGNONINFO: CLIENTUIDREQ
+
+	public List<MfaChallenge> mfaChallenges;
+*/
+	
+	void attemptLogin()
+	{
+		int _i = 0;
+	}
+
 }
