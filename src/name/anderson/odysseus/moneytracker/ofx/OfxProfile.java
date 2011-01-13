@@ -21,6 +21,7 @@ public class OfxProfile
 	public OfxFiDefinition fidef;
 	public FiDescr fidescr;
 	public Date    profAge;
+	//public Date    acctListAge;
 	public String  lang;
 	public X509Certificate lastCert;
 	public boolean useExpectContinue;
