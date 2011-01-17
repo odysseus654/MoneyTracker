@@ -34,6 +34,7 @@ public class OfxProfile
 	public boolean useExpectContinue;
 	public boolean ignoreEncryption;
 	public boolean profileIsUser;
+	public int parentID;
 	public int ID;
 	public LoginSession session;
 
@@ -231,7 +232,17 @@ public class OfxProfile
 	
 	public void mergeProfileResponse(float ofxVer, ProfileMsgResp resp, boolean isUserLogin)
 	{
-		int _i = 0;
+		if(resp.trn.status.code == 1) return;
+		if(isUserLogin && !this.profileIsUser)
+		{
+			this.parentID = this.ID;
+			this.ID = 0;
+		}
+		else if(!isUserLogin && this.profileIsUser)
+		{
+			this.ID = this.parentID;
+			this.parentID = 0;
+		}
 		Map<String,Endpoint> newEPs = new TreeMap<String,Endpoint>();
 		Map<String,SignonRealm> newRealms = new TreeMap<String,SignonRealm>();
 		Map<OfxMessageReq.MessageSet, MsgSetInfo> newMap = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();

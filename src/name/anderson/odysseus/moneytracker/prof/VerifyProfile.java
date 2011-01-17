@@ -251,7 +251,7 @@ public class VerifyProfile extends Activity implements Runnable
 
 	private static final int BEGIN_LOGIN = 1234;
 	
-	private void profileSelected()
+	void profileSelected()
 	{
 		ProfileTable db = new ProfileTable(this);
 		try

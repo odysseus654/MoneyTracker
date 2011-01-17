@@ -48,7 +48,7 @@ public class ProfileTable
 	private static final String[] FI_COLS =
 	{ "lang", "prof_age", "flags", "name", "url", "fi_org", "fi_id", "app_id", "app_ver", "ofx_ver",
 		"prof_name", "prof_addr1", "prof_addr2", "prof_addr3", "prof_city", "prof_state", "prof_postal",
-		"prof_country", "prof_csphone", "prof_tsphone", "prof_faxphone", "prof_url", "prof_email" };
+		"prof_country", "prof_csphone", "prof_tsphone", "prof_faxphone", "prof_url", "prof_email", "parentid" };
 	private static final String[] EP_COLS = { "msgset", "ver", "url", "realm", "spname", "flags" };
 	private static final String[] RM_COLS =
 	{ "name", "min_chars", "max_chars", "char_type", "pass_type", "flags", "user1_label", "user2_label",
@@ -82,7 +82,7 @@ public class ProfileTable
 			"user1_label text, user2_label text, token_label text, token_url text" +
 			");",
 			"CREATE TABLE session (" +
-			"_id integer primary key autincrement, fi integer not null, userid text not null, " +
+			"_id integer primary key autoincrement, fi integer not null, userid text not null, " +
 			"userpass text, user_cred_1 text, user_cred_2 text, auth_token text, session_key text, " +
 			"session_expire text, mfa_answer_key text, session_cookie text, realm text" +
 			");"
@@ -219,6 +219,7 @@ public class ProfileTable
 
 			profile = new OfxProfile(fidef);
 			profile.ID = ID;
+			profile.parentID = cur.getInt(23);
 			profile.lang = cur.getString(0);
 			String iAge = cur.getString(1);
 			if(iAge != null) profile.profAge = new Date(Long.parseLong(iAge));
@@ -351,6 +352,7 @@ public class ProfileTable
 			if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
 			if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
 	
+			if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
 			newValue.put("lang", profile.lang);
 			newValue.put("prof_age", Long.toString(profile.profAge.getTime()));
 			newValue.put("flags", flags);
@@ -469,6 +471,7 @@ public class ProfileTable
 			if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
 			if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
 	
+			if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
 			newValue.put("lang", profile.lang);
 			newValue.put("prof_age", profile.profAge.getTime());
 			newValue.put("flags", flags);

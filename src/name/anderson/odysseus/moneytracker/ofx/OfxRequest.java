@@ -7,11 +7,9 @@ import java.io.*;
 import java.security.cert.*;
 import java.util.*;
 import javax.net.ssl.*;
-
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.prof.MsgSetInfo;
 import name.anderson.odysseus.moneytracker.ofx.signon.SignonMsgReq;
-
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpPost;
@@ -95,74 +93,94 @@ public class OfxRequest
 
 		return FormatHeader(false, this.version) + req.Format(this.version);
 	}
-	
+
 	public List<OfxMessageResp> submit() throws IOException, XmlPullParserException
 	{
-		return submit(false);
+		return submit(null);
 	}
 
-	public List<OfxMessageResp> submit(boolean noAutoSon) throws IOException, XmlPullParserException
+	public List<OfxMessageResp> submit(OfxMessageReq.MessageSet msgsetHint) throws IOException, XmlPullParserException
 	{
+		SortedMap<OfxMessageReq.MessageSet, List<OfxMessageReq> > requestSets
+		= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
+		boolean bHasSon = false;
+		boolean bHasNonGlobal = false;
+
+		// sort our requests into message sets
+		for(OfxMessageReq req : this.contents)
+		{
+			List<OfxMessageReq> reqList;
+			boolean isGlobal = (req.messageSet == OfxMessageReq.MessageSet.SIGNON || req.messageSet == OfxMessageReq.MessageSet.SIGNUP);
+			if(req instanceof SignonMsgReq) bHasSon = true;
+			if(!isGlobal) bHasNonGlobal = true;
+
+			if(requestSets.containsKey(req.messageSet))
+			{
+				reqList = requestSets.get(req.messageSet);
+			}
+			else
+			{
+				reqList = new LinkedList<OfxMessageReq>();
+				requestSets.put(req.messageSet, reqList);
+			}
+			reqList.add(req);
+		}
+		
 		SortedMap<String, TransferObject> requests = new TreeMap<String, TransferObject>();
 		Set<String> encrypted = new TreeSet<String>();
 
+		for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
 		{
-			SortedMap<OfxMessageReq.MessageSet, List<OfxMessageReq> > requestSets
-				= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
-	
-			// sort our requests into message sets
-			for(OfxMessageReq req : this.contents)
-			{
-				List<OfxMessageReq> reqList;
-				if(requestSets.containsKey(req.messageSet))
-				{
-					reqList = requestSets.get(req.messageSet);
-				}
-				else
-				{
-					reqList = new LinkedList<OfxMessageReq>();
-					requestSets.put(req.messageSet, reqList);
-				}
-				reqList.add(req);
-			}
+			boolean isGlobal = (thisSet == OfxMessageReq.MessageSet.SIGNON || thisSet == OfxMessageReq.MessageSet.SIGNUP);
+			if(isGlobal && bHasNonGlobal) continue;
 			
-			for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
-			{
-				String endpoint = this.profile.getEndpoint(thisSet);
-				if(endpoint == null) return null;
-				float msgsetVer = this.profile.getMsgsetVer(this.version, thisSet);
+			String endpoint = this.profile.getEndpoint(isGlobal ? msgsetHint : thisSet);
+			if(endpoint == null) return null;
 
-				// we requesting an encrypted connection here?
-				if(!profile.ignoreEncryption)
+			// we requesting an encrypted connection here?
+			if(!profile.ignoreEncryption)
+			{
+				MsgSetInfo info = profile.getInfo(thisSet);
+				if(info != null && info.securePass && !encrypted.contains(endpoint))
 				{
-					MsgSetInfo info = profile.getInfo(thisSet);
-					if(info != null && info.securePass && !encrypted.contains(endpoint))
+					encrypted.add(endpoint);
+				}
+			}
+
+			TransferObject req;
+			SignonMsgReq thisSon = null;
+			if(requests.containsKey(endpoint))
+			{
+				req = requests.get(endpoint);
+			} else {
+				req = new TransferObject("OFX");
+				requests.put(endpoint, req);
+				
+				if(!bHasSon)
+				{
+					thisSon = this.anonymous ? profile.createAnonymousSignon() : profile.createSignon(thisSet);
+					if(thisSon != null && thisSet != OfxMessageReq.MessageSet.SIGNON)
 					{
-						encrypted.add(endpoint);
+						req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
+								this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON), thisSon));
 					}
 				}
-	
-				TransferObject req;
-				SignonMsgReq thisSon = null;
-				if(requests.containsKey(endpoint))
-				{
-					req = requests.get(endpoint);
-				} else {
-					req = new TransferObject("OFX");
-					requests.put(endpoint, req);
 
-					if(!noAutoSon)
+				if(bHasNonGlobal)
+				{
+					for(OfxMessageReq.MessageSet gblSet : requestSets.keySet())
 					{
-						thisSon = this.anonymous ? profile.createAnonymousSignon() : profile.createSignon(thisSet);
-						if(thisSon != null && thisSet != OfxMessageReq.MessageSet.SIGNON)
+						if(gblSet == OfxMessageReq.MessageSet.SIGNON || gblSet == OfxMessageReq.MessageSet.SIGNUP)
 						{
-							req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
-									this.profile.getMsgsetVer(this.version, OfxMessageReq.MessageSet.SIGNON), thisSon));
+							req.put(BuildMsgSet(gblSet, requestSets.get(gblSet), 
+									this.profile.getMsgsetVer(this.version, gblSet), thisSon));
 						}
 					}
 				}
-				req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), msgsetVer, thisSon));
 			}
+
+			float msgsetVer = this.profile.getMsgsetVer(this.version, thisSet);
+			req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), msgsetVer, thisSon));
 		}
 
 		List<OfxMessageResp> result = null;
@@ -175,7 +193,7 @@ public class OfxRequest
 			{
 				if(resp.trn != null && resp.trn.status != null && resp.trn.status.sev == StatusResponse.ST_ERROR)
 				{
-					int _i = 0;
+					throw new OfxError(resp.trn.status);
 				}
 			}
 			if(result == null)

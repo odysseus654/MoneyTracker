@@ -4,9 +4,7 @@
 package name.anderson.odysseus.moneytracker.ofx.prof;
 
 import java.util.Date;
-import name.anderson.odysseus.moneytracker.ofx.OfxMessageReq;
-import name.anderson.odysseus.moneytracker.ofx.OfxMessageResp;
-import name.anderson.odysseus.moneytracker.ofx.TransferObject;
+import name.anderson.odysseus.moneytracker.ofx.*;
 
 /**
  * @author Erik Anderson
@@ -36,6 +34,12 @@ public class ProfileMsgReq extends OfxMessageReq
 		}
 	}
 
+	@Override
+	public boolean isValidResponse(MessageSet msgsetId, int ver, TransferObject tran, TransferObject obj)
+	{	// prob need to add transaction-matching later
+		return msgsetId == messageSet && tran != null && tran.name.equals(this.name + "TRNRS");
+	}
+	
 	@Override
 	public OfxMessageResp processResponse(TransferObject tran, TransferObject obj)
 	{

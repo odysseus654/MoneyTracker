@@ -18,6 +18,7 @@ public class ProfileMsgResp extends OfxMessageResp
 	public ProfileMsgResp(TransferObject tran, TransferObject in)
 	{
 		if(tran != null) this.trn = new TransactionResp(tran);
+		if(in == null) return;
 
 		this.msgsetList = new TreeMap<OfxMessageReq.MessageSet, List<MsgSetInfo>>();
 		this.signonList = new TreeMap<String, SignonRealm>();

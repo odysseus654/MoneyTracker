@@ -41,7 +41,7 @@ public abstract class OfxMessageReq
 	
 	public boolean isValidResponse(MessageSet msgsetId, int ver, TransferObject tran, TransferObject obj)
 	{	// prob need to add transaction-matching later
-		return msgsetId.equals(messageSet) && obj.name.equals(this.name + "RS");
+		return msgsetId == messageSet && obj != null && obj.name.equals(this.name + "RS");
 	}
 
 	public TransferObject BuildRequest(float msgsetVer)

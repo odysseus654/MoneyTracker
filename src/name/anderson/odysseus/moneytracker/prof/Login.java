@@ -53,6 +53,8 @@ public class Login extends Activity implements Runnable
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.login);
+
 		Bundle parms = getIntent().getExtras();
 		int fi_id = parms.getInt("prof_id");
 		this.sessionId = parms.getInt("sess_id");
@@ -461,11 +463,11 @@ public class Login extends Activity implements Runnable
 
 		OfxRequest req = profile.newRequest();
         req.addRequest(son);
-        req.addRequest(profile.newProfRequest(true));
+        req.addRequest(profile.newProfRequest(profile.profileIsUser));
 
     	List<OfxMessageResp> response;
         try {
-			response = req.submit(profile.profileIsUser);
+			response = req.submit();
 		} catch (HttpResponseException e) {
 			sendExceptionMsg(QH_ERR_STATUS, e);
 			return;
