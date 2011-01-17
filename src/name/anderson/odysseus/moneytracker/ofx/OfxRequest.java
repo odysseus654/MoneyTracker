@@ -96,12 +96,12 @@ public class OfxRequest
 		return FormatHeader(false, this.version) + req.Format(this.version);
 	}
 	
-	public Reader submit() throws IOException
+	public List<OfxMessageResp> submit() throws IOException, XmlPullParserException
 	{
 		return submit(false);
 	}
 
-	public Reader submit(boolean noAutoSon) throws IOException
+	public List<OfxMessageResp> submit(boolean noAutoSon) throws IOException, XmlPullParserException
 	{
 		SortedMap<String, TransferObject> requests = new TreeMap<String, TransferObject>();
 		Set<String> encrypted = new TreeSet<String>();
@@ -165,12 +165,27 @@ public class OfxRequest
 			}
 		}
 
+		List<OfxMessageResp> result = null;
 		for(String endpoint : requests.keySet())
 		{
 			TransferObject req = requests.get(endpoint);
-			return submit(encrypted.contains(endpoint), endpoint, req);
+			Reader r = submit(encrypted.contains(endpoint), endpoint, req);
+			List<OfxMessageResp> list = parseResponse(r);
+			for(OfxMessageResp resp : list)
+			{
+				if(resp.trn != null && resp.trn.status != null && resp.trn.status.sev == StatusResponse.ST_ERROR)
+				{
+					int _i = 0;
+				}
+			}
+			if(result == null)
+			{
+				result = list;
+			} else {
+				result.addAll(list);
+			}
 		}
-		return null;
+		return result;
 	}
 	
 	private HttpClient buildClient()

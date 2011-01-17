@@ -4,8 +4,15 @@
 package name.anderson.odysseus.moneytracker.ofx;
 
 import java.io.*;
+import java.net.ConnectException;
+import java.net.SocketException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpResponseException;
 import org.xmlpull.v1.XmlPullParserException;
 import name.anderson.odysseus.moneytracker.ofx.prof.*;
@@ -28,6 +35,7 @@ public class OfxProfile
 	public boolean ignoreEncryption;
 	public boolean profileIsUser;
 	public int ID;
+	public LoginSession session;
 
 	public Map<String,Endpoint> endpoints;
 	public Map<String,SignonRealm> realms;
@@ -36,8 +44,8 @@ public class OfxProfile
 	
 	final static float DEFAULT_OFX_2x = 2.11f;
 	final static float DEFAULT_OFX_1x = 1.6f;
-	final static String DEFAULT_APP_ID = "QWIN";
-	final static int DEFAULT_APP_VER = 1900;
+	final static String FALLBACK_APP_ID = "QWIN";
+	final static int FALLBACK_APP_VER = 1900;
 	
 	public static class Endpoint
 	{
@@ -75,13 +83,12 @@ public class OfxProfile
 		req.anonymous = true;
 		SignonMsgReq son = createAnonymousSignon(); 
         req.addRequest(son);
-        req.addRequest(newProfRequest());
+        req.addRequest(newProfRequest(false));
 
-        Reader resp = null;
     	List<OfxMessageResp> response;
         for(;;) {
 	        try {
-	        	resp = req.submit();
+	        	response = req.submit();
 	        }
 	        catch(HttpResponseException e)
 	        {
@@ -102,8 +109,8 @@ public class OfxProfile
 	        		if(son.appId == null)
 	        		{
 	        			// we failed either an explicit version or an autodetect scan, start over with an override app
-	        			son.appId = DEFAULT_APP_ID;
-	        			son.appVer = DEFAULT_APP_VER;
+	        			son.appId = FALLBACK_APP_ID;
+	        			son.appVer = FALLBACK_APP_VER;
 	        			continue;
 	        		} else {
 	        			// okay, server's not gonna give us a profile.  Let's just continue with what we've got
@@ -121,8 +128,8 @@ public class OfxProfile
 	        		if(son.appId == null && (this.fidef.ofxVer != 0 || req.version == DEFAULT_OFX_1x))
 	        		{
 	        			// we failed either an explicit version or an autodetect scan, start over with an override app
-	        			son.appId = DEFAULT_APP_ID;
-	        			son.appVer = DEFAULT_APP_VER;
+	        			son.appId = FALLBACK_APP_ID;
+	        			son.appVer = FALLBACK_APP_VER;
 	        			req.version = this.fidef.ofxVer == 0 ? DEFAULT_OFX_2x : this.fidef.ofxVer;
 	        			continue;
 	        		}
@@ -137,9 +144,14 @@ public class OfxProfile
 	        		throw e;
 	        	}
 	        }
-
-	        try {
-	        	response = req.parseResponse(resp);
+	        catch(OfxError e)
+	        {
+	        	if(e.getErrorCode() != StatusResponse.STATUS_BAD_LOGIN)
+	        	{
+	        		// server won't give us a profile without a login, but prob means we're saying the right thing
+	        		break;
+	        	}
+        		throw e;
 	        }
 	        catch(XmlPullParserException e)
 	        {
@@ -154,7 +166,7 @@ public class OfxProfile
 	        }
 	        
 	        ProfileMsgResp proResp = (ProfileMsgResp) response.get(1);
-	    	mergeProfileResponse(req.version, proResp);
+	    	mergeProfileResponse(req.version, proResp, false);
 	        break;
         }
         this.lastCert = req.getLastServerCert();
@@ -166,6 +178,43 @@ public class OfxProfile
 		// req.useExpectContinue
 	}
 	
+	static public String exceptionComment(Exception e)
+	{
+		if(e instanceof OfxError)
+        {
+			return "Server gave an error";
+        }
+		else if(e instanceof HttpResponseException)
+        {
+			switch(((HttpResponseException)e).getStatusCode())
+			{
+			case 200:
+				return "Got a strange response from the server (maybe the location points to a webpage?)";
+			case 400:
+				return "Server rejected the request";
+			default:
+				return "Got a strange response from the server (maybe the location has been removed?)";
+			}
+        }
+		else if(e instanceof XmlPullParserException)
+        {
+			return "Couldn't understand the response from the server";
+        }
+		else if(e instanceof SSLPeerUnverifiedException)
+        {
+			return "We rejected the server identity (this might not be the bank you think it is)";
+        }
+		else if(e instanceof ClientProtocolException || e instanceof ConnectException
+				|| e instanceof SocketException || e instanceof SSLException)
+        {
+			return "Unable to connect to server";
+        }
+		else
+        {
+			return "Unexpected error";
+        }
+	}
+	
 	public OfxRequest newRequest()
 	{
 		OfxRequest req = new OfxRequest(this);
@@ -173,15 +222,16 @@ public class OfxProfile
     	return req;
 	}
 	
-	public ProfileMsgReq newProfRequest()
+	public ProfileMsgReq newProfRequest(boolean useDate)
 	{
 		ProfileMsgReq pro = new ProfileMsgReq();
-		pro.profAge = this.profAge;
+		if(useDate) pro.profAge = this.profAge;
 		return pro;
 	}
 	
-	public void mergeProfileResponse(float ofxVer, ProfileMsgResp resp)
+	public void mergeProfileResponse(float ofxVer, ProfileMsgResp resp, boolean isUserLogin)
 	{
+		int _i = 0;
 		Map<String,Endpoint> newEPs = new TreeMap<String,Endpoint>();
 		Map<String,SignonRealm> newRealms = new TreeMap<String,SignonRealm>();
 		Map<OfxMessageReq.MessageSet, MsgSetInfo> newMap = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();

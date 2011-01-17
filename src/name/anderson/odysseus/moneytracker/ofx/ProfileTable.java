@@ -23,7 +23,7 @@ public class ProfileTable
 	private final OfxFiDefOpenHelper dbhelper;
 	
 	private static final String DATABASE_NAME = "profiles.db";
-	private static final int DATABASE_VERSION = 1;
+	private static final int DATABASE_VERSION = 2;
 
 	private static final int FI_SIMPLE_PROF = 1;
 	private static final int FI_USE_EXPECT_CONTINUE = 2;
@@ -53,6 +53,9 @@ public class ProfileTable
 	private static final String[] RM_COLS =
 	{ "name", "min_chars", "max_chars", "char_type", "pass_type", "flags", "user1_label", "user2_label",
 		"token_label", "token_url" };
+	private static final String[] SS_COLS =
+	{ "fi", "userid", "userpass", "user_cred_1", "user_cred_2", "auth_token", "session_key", "session_expire",
+		"mfa_answer_key", "session_cookie", "realm" };
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
@@ -77,13 +80,20 @@ public class ProfileTable
 			"_id integer primary key autoincrement, fi integer not null, name text not null, " +
 			"min_chars integer, max_chars integer, char_type integer, flags integer, pass_type integer, " +
 			"user1_label text, user2_label text, token_label text, token_url text" +
+			");",
+			"CREATE TABLE session (" +
+			"_id integer primary key autincrement, fi integer not null, userid text not null, " +
+			"userpass text, user_cred_1 text, user_cred_2 text, auth_token text, session_key text, " +
+			"session_expire text, mfa_answer_key text, session_cookie text, realm text" +
 			");"
 		};
+
 		private static final String[] DROP_TABLE =
 		{
 			"DROP TABLE IF EXISTS fi;",
 			"DROP TABLE IF EXISTS endpoint;",
-			"DROP TABLE IF EXISTS realm;"
+			"DROP TABLE IF EXISTS realm;",
+			"DROP TABLE IF EXISTS session;"
 		};
 
 		public OfxFiDefOpenHelper(Context context, String name,	CursorFactory factory, int version)
@@ -495,6 +505,147 @@ public class ProfileTable
 		finally
 		{
 			db.endTransaction();
+		}
+	}
+
+	public void pushSession(LoginSession session)
+	{
+		if(session.ID == 0)
+		{
+			addSession(session);
+		} else {
+			updateSession(session);
+		}
+	}
+
+	private void updateSession(LoginSession session)
+	{
+		updateProfile(session.profile);
+		db.beginTransaction();
+		try
+		{
+			ContentValues newValue = new ContentValues();
+
+			newValue.put("fi", session.profile.ID);
+			if(session.realm != null) newValue.put("realm", session.realm.name);
+			newValue.put("userid", session.userid);
+			newValue.put("userpass", session.userpass);
+			newValue.put("user_cred_1", session.userCred1);
+			newValue.put("user_cred_2", session.userCred2);
+			newValue.put("auth_token", session.authToken);
+			newValue.put("session_key", session.sessionkey);
+			newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
+			newValue.put("mfa_answer_key", session.mfaAnswerKey);
+			newValue.put("session_cookie", session.sessionCookie);
+	
+			String[] args = { Integer.toString(session.ID) };
+			db.update("session", newValue, "_id=?", args);
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+	}
+
+	private int addSession(LoginSession session)
+	{
+		pushProfile(session.profile);
+		db.beginTransaction();
+		int fi_id;
+		try
+		{
+			ContentValues newValue = new ContentValues();
+
+			newValue.put("fi", session.profile.ID);
+			if(session.realm != null) newValue.put("realm", session.realm.name);
+			newValue.put("userid", session.userid);
+			newValue.put("userpass", session.userpass);
+			newValue.put("user_cred_1", session.userCred1);
+			newValue.put("user_cred_2", session.userCred2);
+			newValue.put("auth_token", session.authToken);
+			newValue.put("session_key", session.sessionkey);
+			newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
+			newValue.put("mfa_answer_key", session.mfaAnswerKey);
+			newValue.put("session_cookie", session.sessionCookie);
+
+			fi_id = (int)db.insertOrThrow("session", "fi", newValue);
+			session.ID = fi_id;
+			
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+		return fi_id;
+	}
+	
+	public LoginSession getSession(OfxProfile profile, int ID)
+	{
+		String[] args = { Integer.toString(profile.ID), Integer.toString(ID) };
+		Cursor cur = db.query("session", SS_COLS, "fi=? and _id=?", args, null, null, null);
+		try
+		{
+			if(!cur.moveToNext()) return null;
+			LoginSession session = new LoginSession();
+			session.profile = profile;
+			session.ID = ID;
+			session.userid = cur.getString(1);
+			session.userpass = cur.getString(2);
+			session.userCred1 = cur.getString(3);
+			session.userCred2 = cur.getString(4);
+			session.authToken = cur.getString(5);
+			session.sessionkey = cur.getString(6);
+			String iExpire = cur.getString(7);
+			if(iExpire != null) session.sessionExpire = new Date(Long.parseLong(iExpire));
+			session.mfaAnswerKey = cur.getString(8);
+			session.sessionCookie = cur.getString(9);
+			String realmName = cur.getString(10);
+			if(realmName != null && profile.realms != null && profile.realms.containsKey(realmName))
+			{
+				session.realm = profile.realms.get(realmName);
+			}
+
+			return session;
+		}
+		finally
+		{
+			cur.close();
+		}
+	}
+
+	public LoginSession getSession(int ID)
+	{
+		String[] args = { Integer.toString(ID) };
+		Cursor cur = db.query("session", SS_COLS, "_id=?", args, null, null, null);
+		try
+		{
+			if(!cur.moveToNext()) return null;
+			LoginSession session = new LoginSession();
+			OfxProfile profile = getProfile(cur.getInt(0));
+			session.profile = profile;
+			session.ID = ID;
+			session.userid = cur.getString(1);
+			session.userpass = cur.getString(2);
+			session.userCred1 = cur.getString(3);
+			session.userCred2 = cur.getString(4);
+			session.authToken = cur.getString(5);
+			session.sessionkey = cur.getString(6);
+			String iExpire = cur.getString(7);
+			if(iExpire != null) session.sessionExpire = new Date(Long.parseLong(iExpire));
+			session.mfaAnswerKey = cur.getString(8);
+			session.sessionCookie = cur.getString(9);
+			String realmName = cur.getString(10);
+			if(realmName != null && profile.realms != null && profile.realms.containsKey(realmName))
+			{
+				session.realm = profile.realms.get(realmName);
+			}
+			return session;
+		}
+		finally
+		{
+			cur.close();
 		}
 	}
 }

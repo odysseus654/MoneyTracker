@@ -37,7 +37,7 @@ public class MoneyTrackerEntry extends Activity {
         	req.security = true;
 */
 	        OfxRequest req = pro.newRequest();
-	        req.addRequest(pro.newProfRequest());
+	        req.addRequest(pro.newProfRequest(false));
 /*
 	        HttpResponse resp = req.submit();
 	        

@@ -17,7 +17,9 @@ import javax.net.ssl.*;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.ofx.*;
+
 import org.apache.http.client.*;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * @author Erik
@@ -284,6 +286,8 @@ public class VerifyProfile extends Activity implements Runnable
 	private static final int QH_ERR_CONN = 5;
 	private static final int QH_ERR_SSL = 6;
 	private static final int QH_ERR_SSL_VERIFY = 7;
+	private static final int QH_ERR_OFX = 8;
+	private static final int QH_ERR_PARSE = 9;
 	
 	private Handler queryHandler = new Handler()
 	{
@@ -358,10 +362,20 @@ public class VerifyProfile extends Activity implements Runnable
 						break;
 					}
 					
-				case QH_ERR_SSL_VERIFY:
-					doAlert((Exception)msg.obj, "The server identity was rejected (this might not be the bank you think it is)");
-					break;
-
+				case QH_ERR_OFX:
+					{
+						OfxError e = (OfxError)msg.obj;
+			        	switch(e.getErrorCode())
+			        	{
+			        	case StatusResponse.STATUS_FI_INVALID: // <FI> Missing or Invalid in <SONRQ> (ERROR)
+							doAlert(e, "Server is rejecting connection details (FI_ID or FI_ORG)");
+							break;
+			        	default:
+							doAlert(e, "Got a strange response from the server");
+							break;
+			        	}
+					}
+					
 				case QH_ERR_HTTP:
 				case QH_ERR_TIMEOUT:
 				case QH_ERR_CONN:
@@ -370,7 +384,7 @@ public class VerifyProfile extends Activity implements Runnable
 					break;
 
 				default:
-					doAlert((Exception)msg.obj, "Failed to retrieve profile information");
+					doAlert((Exception)msg.obj, OfxProfile.exceptionComment((Exception)msg.obj));
 					break;
 				}
 			}
@@ -394,6 +408,10 @@ public class VerifyProfile extends Activity implements Runnable
 				profile.negotiate();
 			} catch (HttpResponseException e) {
 				sendExceptionMsg(QH_ERR_STATUS, e);
+			} catch (OfxError e) {
+				sendExceptionMsg(QH_ERR_OFX, e);
+			} catch (XmlPullParserException e) {
+				sendExceptionMsg(QH_ERR_PARSE, e);
 			} catch (SSLPeerUnverifiedException e) {
 				sendExceptionMsg(QH_ERR_SSL_VERIFY, e);
 			} catch (ClientProtocolException e) {

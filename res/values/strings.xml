@@ -96,4 +96,5 @@
 	<string name="login_pass">Password or PIN:</string>
 	<string name="login_pwtype_onetime">One-time password given by your bank:</string>
 	<string name="login_pwtype_hwtoken">Code from your keyfob or similar device:</string>
+	<string name="login_progress">Attempting to login</string>
 </resources>

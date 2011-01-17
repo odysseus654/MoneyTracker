@@ -13,33 +13,34 @@ import name.anderson.odysseus.moneytracker.ofx.*;
 public class SignonMsgResp extends OfxMessageResp
 {
 	public StatusResponse status;
-	public Date DTServer;
-	public String userKey;
-	public Date tsKeyExpire;
-	public String language;
-	public String country;
-	public Date DTProfUp;
-	public Date DTAcctUp;
-	public String fiID;
-	public String fiOrg;
-	public String sessCookie;
-	public String accessKey;
+	public Date DTServer;				// current server timestamp
+	public String userKey;				// session key
+	public Date tsKeyExpire;			// expiration of session key
+	public String language;				// language
+	public String country;				// country
+	public Date DTProfUp;				// last profile update date
+	public Date DTAcctUp;				// last account list update date
+	public String fiID;					// fi ID
+	public String fiOrg;				// fi ORG
+	public String sessCookie;			// session cookie
+	public String accessKey;			// access key
 
-	public static final int STATUS_SUCCESS = 0;
-	public static final int STATUS_ERROR = 2000;
-	public static final int STATUS_MFA_REQUIRED = 3000;
-	public static final int STATUS_MFA_INVALID = 3001;
-	public static final int STATUS_FI_INVALID = 13504;
-	public static final int STATUS_PINCH_NEEDED = 15000;
-	public static final int STATUS_BAD_LOGIN = 15500;
-	public static final int STATUS_ACCT_BUSY = 15501;
-	public static final int STATUS_ACCT_LOCKED = 15502;
-	public static final int STATUS_EMPTY_REQUEST = 15506;
-	public static final int STATUS_PINCH_REQUIRED = 15507;
-	public static final int STATUS_CLIENTUID_REJECTED = 15510;
-	public static final int STATUS_CALL_US = 15511;
-	public static final int STATUS_AUTHTOKEN_REQUIRED = 15512;
-	public static final int STATUS_AUTHTOKEN_INVALID = 15513;
+//case StatusResponse.STATUS_SUCCESS: // Success (INFO)
+//case StatusResponse.STATUS_ERROR: // General error (ERROR)
+//case StatusResponse.STATUS_MFA_REQUIRED: // User credentials are correct, but further authentication required (ERROR)
+//case StatusResponse.STATUS_MFA_INVALID: // MFACHALLENGEA contains invalid information (ERROR)
+//case StatusResponse.STATUS_FI_INVALID: // <FI> Missing or Invalid in <SONRQ> (ERROR)
+//case StatusResponse.STATUS_PINCH_NEEDED: // Must change USERPASS (INFO)
+//case StatusResponse.STATUS_BAD_LOGIN: // Signon invalid (see section 2.5.1) (ERROR)
+//case StatusResponse.STATUS_ACCT_BUSY: // Customer account already in use (ERROR)
+//case StatusResponse.STATUS_ACCT_LOCKED: // USERPASS Lockout (ERROR)
+//case StatusResponse.STATUS_EMPTY_REQUEST: // Empty signon transaction not supported (ERROR)
+//case StatusResponse.STATUS_PINCH_REQUIRED: // Signon invalid without supporting pin change request (ERROR)
+//case StatusResponse.STATUS_CLIENTUID_REJECTED: // CLIENTUID error (ERROR)
+//case StatusResponse.STATUS_CALL_US: // User should contact financial institution (ERROR)
+//case StatusResponse.STATUS_AUTHTOKEN_REQUIRED: // OFX server requires AUTHTOKEN in signon during the next session (ERROR)
+//case StatusResponse.STATUS_AUTHTOKEN_INVALID:// AUTHTOKEN invalid (ERROR)
+
 /*
 	public SignonMsgResp()
 	{
