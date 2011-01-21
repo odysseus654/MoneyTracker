@@ -12,6 +12,7 @@ import name.anderson.odysseus.moneytracker.ofx.prof.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import android.app.*;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteException;
 import android.os.*;
 import android.provider.Settings;
@@ -103,7 +104,18 @@ public class Login extends Activity implements Runnable
 			return;
 		}
 		
-		if(session != null)
+		if(savedInstanceState != null)
+		{
+			this.sessionId = savedInstanceState.getInt("sessionId");
+			this.requireAuthToken = savedInstanceState.getBoolean("requireAuthToken");
+			this.userid = savedInstanceState.getString("userid");
+			this.userpass = savedInstanceState.getString("userpass");
+			this.userCred1 = savedInstanceState.getString("userCred1");
+			this.userCred2 = savedInstanceState.getString("userCred2");
+			this.authToken = savedInstanceState.getString("authToken");
+			realmName = savedInstanceState.getString("realmName");
+		}
+		else if(session != null)
 		{
 			this.userid = session.userid;
 			this.userpass = session.userpass;
@@ -310,10 +322,11 @@ public class Login extends Activity implements Runnable
 	
 	private void loginSuccessful()
 	{
-		int _i = 0;
-		// TODO Auto-generated method stub
+		Intent i = getIntent();
+		i.putExtra("sess_id", this.sessionId);
+		setResult(RESULT_OK, i);
+		finish();
 	}
-
 /*
 	public String userkey;		// session: login response
 	public String accessKey;	// session: mfa response
@@ -518,6 +531,7 @@ public class Login extends Activity implements Runnable
 	    		{
 	    			db.open();
 		    		db.pushSession(session);
+		    		this.sessionId = session.ID;
 	    		}
 	    		catch(SQLiteException e)
 	    		{
@@ -537,5 +551,19 @@ public class Login extends Activity implements Runnable
 //		e.printStackTrace();
 //		//throw(e);
 //	}
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState)
+	{
+		super.onSaveInstanceState(outState);
+		outState.putInt("sessionId", this.sessionId);
+		outState.putBoolean("requireAuthToken", this.requireAuthToken);
+		outState.putString("userid", this.userid.toString());
+		outState.putString("userpass", this.userpass.toString());
+		outState.putString("userCred1", this.userCred1.toString());
+		outState.putString("userCred2", this.userCred2.toString());
+		outState.putString("authToken", this.authToken.toString());
+		if(this.realm != null) outState.putString("realmName", this.realm.name);
 	}
 }

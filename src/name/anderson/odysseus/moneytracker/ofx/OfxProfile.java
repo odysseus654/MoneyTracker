@@ -28,7 +28,7 @@ public class OfxProfile
 	public OfxFiDefinition fidef;
 	public FiDescr fidescr;
 	public Date    profAge;
-	//public Date    acctListAge;
+	public Date    acctListAge;
 	public String  lang;
 	public X509Certificate lastCert;
 	public boolean useExpectContinue;
@@ -166,8 +166,13 @@ public class OfxProfile
         		}
 	        }
 	        
-	        ProfileMsgResp proResp = (ProfileMsgResp) response.get(1);
-	    	mergeProfileResponse(req.version, proResp, false);
+	    	for(OfxMessageResp resp : response)
+	    	{
+	    		if(resp instanceof ProfileMsgResp)
+	    		{
+	    			mergeProfileResponse(req.version, (ProfileMsgResp)resp, true);
+	    		}
+	    	}
 	        break;
         }
         this.lastCert = req.getLastServerCert();
@@ -233,16 +238,7 @@ public class OfxProfile
 	public void mergeProfileResponse(float ofxVer, ProfileMsgResp resp, boolean isUserLogin)
 	{
 		if(resp.trn.status.code == 1) return;
-		if(isUserLogin && !this.profileIsUser)
-		{
-			this.parentID = this.ID;
-			this.ID = 0;
-		}
-		else if(!isUserLogin && this.profileIsUser)
-		{
-			this.ID = this.parentID;
-			this.parentID = 0;
-		}
+		
 		Map<String,Endpoint> newEPs = new TreeMap<String,Endpoint>();
 		Map<String,SignonRealm> newRealms = new TreeMap<String,SignonRealm>();
 		Map<OfxMessageReq.MessageSet, MsgSetInfo> newMap = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();
@@ -300,6 +296,17 @@ public class OfxProfile
 			}
 		}
 
+		if(isUserLogin && !this.profileIsUser)
+		{
+			this.parentID = this.ID;
+			this.ID = 0;
+		}
+		else if(!isUserLogin && this.profileIsUser)
+		{
+			this.ID = this.parentID;
+			this.parentID = 0;
+		}
+		this.profileIsUser = isUserLogin;
 		this.fidescr = resp.descr;
 		this.profAge = resp.DtProfileUp;
 		this.endpoints = newEPs;

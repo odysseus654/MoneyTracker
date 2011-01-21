@@ -4,6 +4,9 @@
 package name.anderson.odysseus.moneytracker.ofx.signup;
 
 import name.anderson.odysseus.moneytracker.ofx.TransferObject;
+import name.anderson.odysseus.moneytracker.ofx.bank.BankServiceAcctInfo;
+import name.anderson.odysseus.moneytracker.ofx.cc.CcServiceAcctInfo;
+import name.anderson.odysseus.moneytracker.ofx.loan.LoanServiceAcctInfo;
 
 /**
  * @author Erik
@@ -11,17 +14,34 @@ import name.anderson.odysseus.moneytracker.ofx.TransferObject;
  */
 public class AccountInfo
 {
-	public enum Service { BANK, CC, LOAN };
-
 	public String desc;
 	public String phone;
+	
+	public BankServiceAcctInfo bankInfo;
+	public CcServiceAcctInfo ccInfo;
+	public LoanServiceAcctInfo loanInfo; 
 	
 	public AccountInfo(TransferObject in)
 	{
 		this.desc = in.getAttr("DESC");
 		this.phone = in.getAttr("PHONE");
 
-		// TODO Auto-generated constructor stub
-	}
+		TransferObject sub = in.getObj("BANKACCTINFO");
+		if(sub != null)
+		{
+			bankInfo = new BankServiceAcctInfo(sub);
+		}
 
+		sub = in.getObj("CCACCTINFO");
+		if(sub != null)
+		{
+			ccInfo = new CcServiceAcctInfo(sub);
+		}
+
+		sub = in.getObj("LOANACCTINFO");
+		if(sub != null)
+		{
+			loanInfo = new LoanServiceAcctInfo(sub);
+		}
+	}
 }

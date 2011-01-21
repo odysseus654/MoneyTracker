@@ -97,4 +97,6 @@
 	<string name="login_pwtype_onetime">One-time password given by your bank:</string>
 	<string name="login_pwtype_hwtoken">Code from your keyfob or similar device:</string>
 	<string name="login_progress">Attempting to login</string>
+	<string name="select_acct_title">Select Account</string>
+	<string name="account_list_progress">Querying server for account list</string>
 </resources>

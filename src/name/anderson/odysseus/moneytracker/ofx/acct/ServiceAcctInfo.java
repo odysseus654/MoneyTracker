@@ -1,4 +1,4 @@
-package name.anderson.odysseus.moneytracker.ofx.signup;
+package name.anderson.odysseus.moneytracker.ofx.acct;
 
 import name.anderson.odysseus.moneytracker.ofx.TransferObject;
 

@@ -14,7 +14,7 @@ public class AccountInfoMsgReq extends OfxMessageReq
 {
 	public Date acctListAge;
 
-	public AccountInfoMsgReq(MessageSet ms, String n)
+	public AccountInfoMsgReq()
 	{
 		super(MessageSet.SIGNUP, "ACCTINFO");
 	}

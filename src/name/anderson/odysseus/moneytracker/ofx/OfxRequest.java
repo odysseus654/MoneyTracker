@@ -31,7 +31,7 @@ public class OfxRequest
 	public UUID fileUid;
 	public boolean useExpectContinue;
 	public boolean anonymous;
-	protected List<OfxMessageReq> contents;
+	public List<OfxMessageReq> contents;
 	protected OfxProfile profile;
 	private SchemeRegistry registry;
 	private OfxSSLSocketFactory sockFact;
@@ -50,7 +50,7 @@ public class OfxRequest
 		this.contents.add(req);
 	}
 	
-	public String Format()
+	public String Format(boolean noAutoSon)
 	{
 		SortedMap<OfxMessageReq.MessageSet, List<OfxMessageReq> > requestSets
 			= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
@@ -78,8 +78,12 @@ public class OfxRequest
 		TransferObject req = new TransferObject("OFX");
 		OfxMessageReq.MessageSet firstMsgSet = requestSets.isEmpty() ? null : requestSets.firstKey();
 		
-		SignonMsgReq thisSon = this.anonymous ? profile.createAnonymousSignon()
-				: profile.createSignon(firstMsgSet == null ? OfxMessageReq.MessageSet.SIGNON : firstMsgSet);
+		SignonMsgReq thisSon = null;
+		if(!noAutoSon)
+		{
+			thisSon = this.anonymous ? profile.createAnonymousSignon()
+					: profile.createSignon(firstMsgSet == null ? OfxMessageReq.MessageSet.SIGNON : firstMsgSet);
+		}
 		if(thisSon != null && firstMsgSet != OfxMessageReq.MessageSet.SIGNON)
 		{
 			req.put(BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, null,
@@ -96,10 +100,15 @@ public class OfxRequest
 
 	public List<OfxMessageResp> submit() throws IOException, XmlPullParserException
 	{
-		return submit(null);
+		return submit(null, false);
 	}
 
 	public List<OfxMessageResp> submit(OfxMessageReq.MessageSet msgsetHint) throws IOException, XmlPullParserException
+	{
+		return submit(msgsetHint, false);
+	}
+
+	public List<OfxMessageResp> submit(OfxMessageReq.MessageSet msgsetHint, boolean noAutoSon) throws IOException, XmlPullParserException
 	{
 		SortedMap<OfxMessageReq.MessageSet, List<OfxMessageReq> > requestSets
 		= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
@@ -136,7 +145,7 @@ public class OfxRequest
 			
 			String endpoint = this.profile.getEndpoint(isGlobal ? msgsetHint : thisSet);
 			if(endpoint == null) return null;
-
+/*
 			// we requesting an encrypted connection here?
 			if(!profile.ignoreEncryption)
 			{
@@ -146,7 +155,7 @@ public class OfxRequest
 					encrypted.add(endpoint);
 				}
 			}
-
+*/
 			TransferObject req;
 			SignonMsgReq thisSon = null;
 			if(requests.containsKey(endpoint))
@@ -156,7 +165,7 @@ public class OfxRequest
 				req = new TransferObject("OFX");
 				requests.put(endpoint, req);
 				
-				if(!bHasSon)
+				if(!bHasSon && !noAutoSon)
 				{
 					thisSon = this.anonymous ? profile.createAnonymousSignon() : profile.createSignon(thisSet);
 					if(thisSon != null && thisSet != OfxMessageReq.MessageSet.SIGNON)
@@ -265,7 +274,7 @@ public class OfxRequest
 		}
 	}
 
-	private Reader submit(boolean security, String endpoint, TransferObject reqObj) throws IOException
+	public Reader submit(boolean security, String endpoint, TransferObject reqObj) throws IOException
 	{
 		HttpClient client = buildClient();
 		HttpPost post = new HttpPost(endpoint);
@@ -294,7 +303,7 @@ public class OfxRequest
 
         if(statusCode == 200)
         {
-        	if(!contentType.equals("application/x-ofx"))
+        	if(!contentType.equals("application/x-ofx") && !contentType.equals("text/ofx"))
         	{
             	throw new HttpResponseException(statusCode, "Unexpected Content-Type " + contentType);
         	} else {
@@ -365,7 +374,7 @@ public class OfxRequest
 		return out.toString();
 	}
 	
-	private static TransferObject BuildMsgSet(OfxMessageReq.MessageSet thisSet, List<OfxMessageReq> list,
+	public static TransferObject BuildMsgSet(OfxMessageReq.MessageSet thisSet, List<OfxMessageReq> list,
 			float msgsetVer, SignonMsgReq thisSon)
 	{
 		String setName = thisSet.name();

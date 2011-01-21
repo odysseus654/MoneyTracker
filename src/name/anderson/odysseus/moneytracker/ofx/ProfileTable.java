@@ -48,7 +48,8 @@ public class ProfileTable
 	private static final String[] FI_COLS =
 	{ "lang", "prof_age", "flags", "name", "url", "fi_org", "fi_id", "app_id", "app_ver", "ofx_ver",
 		"prof_name", "prof_addr1", "prof_addr2", "prof_addr3", "prof_city", "prof_state", "prof_postal",
-		"prof_country", "prof_csphone", "prof_tsphone", "prof_faxphone", "prof_url", "prof_email", "parentid" };
+		"prof_country", "prof_csphone", "prof_tsphone", "prof_faxphone", "prof_url", "prof_email",
+		"parentid", "acct_age" };
 	private static final String[] EP_COLS = { "msgset", "ver", "url", "realm", "spname", "flags" };
 	private static final String[] RM_COLS =
 	{ "name", "min_chars", "max_chars", "char_type", "pass_type", "flags", "user1_label", "user2_label",
@@ -62,7 +63,8 @@ public class ProfileTable
 		private static final String[] CREATE_TABLE =
 		{
 			"CREATE TABLE fi(" +
-			"_id integer primary key autoincrement, parentid integer, lang text, prof_age text, flags integer not null, " +
+			"_id integer primary key autoincrement, parentid integer, lang text, prof_age text, acct_age text," +
+			"flags integer not null, " +
 			// fidef
 			"name text not null, url text not null, fi_org text, fi_id text, app_id text, app_ver integer, " +
 			"ofx_ver float not null, " + //, simple_prof integer, " +
@@ -222,7 +224,9 @@ public class ProfileTable
 			profile.parentID = cur.getInt(23);
 			profile.lang = cur.getString(0);
 			String iAge = cur.getString(1);
-			if(iAge != null) profile.profAge = new Date(Long.parseLong(iAge));
+			profile.profAge = (iAge != null) ? new Date(Long.parseLong(iAge)) : null;
+			iAge = cur.getString(24);
+			profile.acctListAge = (iAge != null) ? new Date(Long.parseLong(iAge)) : null;
 			profile.useExpectContinue = (flags & FI_USE_EXPECT_CONTINUE) != 0;
 			profile.ignoreEncryption = (flags & FI_IGNORE_ENCRYPTION) != 0;
 			profile.profileIsUser = (flags & FI_PROFILE_IS_USER) != 0;
@@ -354,7 +358,9 @@ public class ProfileTable
 	
 			if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
 			newValue.put("lang", profile.lang);
-			newValue.put("prof_age", Long.toString(profile.profAge.getTime()));
+			newValue.put("prof_age", profile.profAge == null ? null : Long.toString(profile.profAge.getTime()));
+			newValue.put("acct_age", profile.acctListAge == null ? null : Long.toString(profile.acctListAge.getTime()));
+
 			newValue.put("flags", flags);
 			newValue.put("name", profile.fidef.name);
 			newValue.put("url", profile.fidef.fiURL);
@@ -473,7 +479,8 @@ public class ProfileTable
 	
 			if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
 			newValue.put("lang", profile.lang);
-			newValue.put("prof_age", profile.profAge.getTime());
+			newValue.put("prof_age", profile.profAge == null ? null : Long.toString(profile.profAge.getTime()));
+			newValue.put("acct_age", profile.acctListAge == null ? null : Long.toString(profile.acctListAge.getTime()));
 			newValue.put("flags", flags);
 			newValue.put("name", profile.fidef.name);
 			newValue.put("url", profile.fidef.fiURL);

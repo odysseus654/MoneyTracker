@@ -27,28 +27,21 @@ public class MoneyTrackerEntry extends Activity {
 //        	def.fiID = "1";
 //        	def.fiURL = "https://emax.wecu.com/ofx/ofx.dll";
     		def.fiURL = "https://localhost";
-    		def.appId = "QWIN";
-    		def.appVer = 1900;
-/*        	
+//    		def.appId = "QWIN";
+//    		def.appVer = 1900;
+        	
         	OfxRequest req = pro.newRequest();
+        	req.addRequest(pro.createAnonymousSignon());
         	ChallengeMsgReq challenge = new ChallengeMsgReq();
         	challenge.userid = "222781";
         	req.addRequest(challenge);
-        	req.security = true;
-*/
-	        OfxRequest req = pro.newRequest();
-	        req.addRequest(pro.newProfRequest(false));
-/*
-	        HttpResponse resp = req.submit();
-	        
-	        StatusLine status = resp.getStatusLine();
-	        int code = status.getStatusCode();
-	        String codeMsg = status.getReasonPhrase();
-	        InputStream entity = resp.getEntity().getContent();
-	        Header[] headers = resp.getAllHeaders();
-	        Reader reader = new InputStreamReader(entity, "UTF-8");
-	        String stringResponse = convertStreamToString(entity);
-*/
+        	//String str3 = req.Format(true);
+
+			TransferObject obj = new TransferObject("OFX");
+			obj.put(OfxRequest.BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, req.contents, 1.1f, null));
+        	Reader resp = req.submit(true, def.fiURL, obj);
+	        String stringResponse = Utilities.convertStreamToString(resp);
+
         	String str4 = "hello";
 			
 		} catch (Exception e) {
