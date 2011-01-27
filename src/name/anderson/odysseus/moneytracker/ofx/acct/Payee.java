@@ -1,4 +1,4 @@
-package name.anderson.odysseus.moneytracker.ofx.bank;
+package name.anderson.odysseus.moneytracker.ofx.acct;
 
 public class Payee
 {

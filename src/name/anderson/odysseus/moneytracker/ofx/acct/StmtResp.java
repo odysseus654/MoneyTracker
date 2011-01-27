@@ -1,8 +1,7 @@
-package name.anderson.odysseus.moneytracker.ofx.bank;
+package name.anderson.odysseus.moneytracker.ofx.acct;
 
 import java.util.*;
 import name.anderson.odysseus.moneytracker.ofx.*;
-import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctName;
 
 public class StmtResp extends OfxMessageResp
 {
