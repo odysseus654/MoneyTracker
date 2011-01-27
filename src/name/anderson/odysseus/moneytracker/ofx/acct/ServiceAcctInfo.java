@@ -44,18 +44,19 @@ public class ServiceAcctInfo
 		str = in.getAttr("SUPTXDL");
 		this.detailAvail = (str != null && str.equals("Y"));
 		
-		TransferObject sub;
+		TransferObject sub = null;
 		switch(this.type)
 		{
 		case BANK:
 			sub = in.getObj("BANKACCTFROM");
-			if(sub != null) this.name = new ServiceAcctName(type, sub);
 			break;
 		case CC:
 			sub = in.getObj("CCACCTFROM");
-			if(sub != null) this.name = new ServiceAcctName(type, sub);
 			break;
 		case LOAN:
+			sub = in.getObj("LOANACCTFROM");
+			break;
 		}
+		if(sub != null) this.name = new ServiceAcctName(type, sub);
 	}
 }

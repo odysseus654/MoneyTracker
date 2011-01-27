@@ -1,12 +1,10 @@
 /**
  * 
  */
-package name.anderson.odysseus.moneytracker.ofx.loan;
+package name.anderson.odysseus.moneytracker.ofx.acct;
 
 import java.util.Date;
 import name.anderson.odysseus.moneytracker.ofx.TransferObject;
-import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctInfo;
-import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctName;
 
 /**
  * @author Erik
@@ -30,7 +28,6 @@ public class LoanServiceAcctInfo extends ServiceAcctInfo
 	public static final int LF_ANUALLY = 9;
 	public static final int LF_MATURITY = 10;
 
-	public ServiceAcctName name;
 	public int loanType;
 	public int initNumPayments;
 	public double initBalance;
@@ -53,10 +50,7 @@ public class LoanServiceAcctInfo extends ServiceAcctInfo
 	 */
 	public LoanServiceAcctInfo(TransferObject in)
 	{
-		super(in);
-
-		TransferObject sub = in.getObj("LOANACCTFROM");
-		if(sub != null) this.name = new ServiceAcctName(ServiceAcctName.ServiceType.LOAN, sub);
+		super(ServiceAcctName.ServiceType.LOAN, in);
 
 		String str = in.getAttr("LOANTYPE");
 		if(str != null)

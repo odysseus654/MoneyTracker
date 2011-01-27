@@ -4,9 +4,7 @@
 package name.anderson.odysseus.moneytracker.ofx.signup;
 
 import name.anderson.odysseus.moneytracker.ofx.TransferObject;
-import name.anderson.odysseus.moneytracker.ofx.bank.BankServiceAcctInfo;
-import name.anderson.odysseus.moneytracker.ofx.cc.CcServiceAcctInfo;
-import name.anderson.odysseus.moneytracker.ofx.loan.LoanServiceAcctInfo;
+import name.anderson.odysseus.moneytracker.ofx.acct.*;
 
 /**
  * @author Erik
@@ -17,8 +15,8 @@ public class AccountInfo
 	public String desc;
 	public String phone;
 	
-	public BankServiceAcctInfo bankInfo;
-	public CcServiceAcctInfo ccInfo;
+	public ServiceAcctInfo bankInfo;
+	public ServiceAcctInfo ccInfo;
 	public LoanServiceAcctInfo loanInfo; 
 	
 	public AccountInfo(TransferObject in)
@@ -29,13 +27,13 @@ public class AccountInfo
 		TransferObject sub = in.getObj("BANKACCTINFO");
 		if(sub != null)
 		{
-			bankInfo = new BankServiceAcctInfo(sub);
+			bankInfo = new ServiceAcctInfo(ServiceAcctName.ServiceType.BANK, sub);
 		}
 
 		sub = in.getObj("CCACCTINFO");
 		if(sub != null)
 		{
-			ccInfo = new CcServiceAcctInfo(sub);
+			ccInfo = new ServiceAcctInfo(ServiceAcctName.ServiceType.CC, sub);
 		}
 
 		sub = in.getObj("LOANACCTINFO");
