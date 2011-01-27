@@ -8,13 +8,16 @@ public class ServiceAcctInfo
 	public static final int STAT_PEND = 2;
 	public static final int STAT_ACTIVE = 3;
 	
+	public ServiceAcctName.ServiceType type;
 	public boolean detailAvail;
 	public boolean xferSource;
 	public boolean xferDest;
 	public int status;
+	public ServiceAcctName name;
 
-	public ServiceAcctInfo(TransferObject in)
+	public ServiceAcctInfo(ServiceAcctName.ServiceType t, TransferObject in)
 	{
+		this.type = t;
 		String str = in.getAttr("SVCSTATUS");
 		if(str != null)
 		{
@@ -40,5 +43,19 @@ public class ServiceAcctInfo
 		
 		str = in.getAttr("SUPTXDL");
 		this.detailAvail = (str != null && str.equals("Y"));
+		
+		TransferObject sub;
+		switch(this.type)
+		{
+		case BANK:
+			sub = in.getObj("BANKACCTFROM");
+			if(sub != null) this.name = new ServiceAcctName(type, sub);
+			break;
+		case CC:
+			sub = in.getObj("CCACCTFROM");
+			if(sub != null) this.name = new ServiceAcctName(type, sub);
+			break;
+		case LOAN:
+		}
 	}
 }
