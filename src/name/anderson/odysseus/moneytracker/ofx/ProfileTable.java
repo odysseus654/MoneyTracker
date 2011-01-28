@@ -4,7 +4,10 @@
 package name.anderson.odysseus.moneytracker.ofx;
 
 import java.util.*;
+
 import name.anderson.odysseus.moneytracker.ofx.OfxProfile.Endpoint;
+import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctInfo;
+import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctName;
 import name.anderson.odysseus.moneytracker.ofx.prof.*;
 import name.anderson.odysseus.moneytracker.prof.OfxFiDefinition;
 import android.content.*;
@@ -23,7 +26,7 @@ public class ProfileTable
 	private final OfxFiDefOpenHelper dbhelper;
 	
 	private static final String DATABASE_NAME = "profiles.db";
-	private static final int DATABASE_VERSION = 2;
+	private static final int DATABASE_VERSION = 3;
 
 	private static final int FI_SIMPLE_PROF = 1;
 	private static final int FI_USE_EXPECT_CONTINUE = 2;
@@ -44,6 +47,10 @@ public class ProfileTable
 	private static final int RM_AUTH_TOKEN_FIRST = 64;
 	private static final int RM_MFA_SUPPORTED = 128;
 	private static final int RM_MFA_FIRST = 256;
+
+	private static final int AC_DETAIL_AVAIL = 1;
+	private static final int AC_XFER_SOURCE = 2;
+	private static final int AC_XFER_DEST = 4;
 	
 	private static final String[] FI_COLS =
 	{ "lang", "prof_age", "flags", "name", "url", "fi_org", "fi_id", "app_id", "app_ver", "ofx_ver",
@@ -57,6 +64,9 @@ public class ProfileTable
 	private static final String[] SS_COLS =
 	{ "fi", "userid", "userpass", "user_cred_1", "user_cred_2", "auth_token", "session_key", "session_expire",
 		"mfa_answer_key", "session_cookie", "realm" };
+	private static final String[] AC_COLS =
+	{ "session", "desc", "phone", "type", "flags", "status", "bank_id", "branch_id", "acct_id",
+		"acct_type", "acct_key", "_id" };
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
@@ -87,6 +97,11 @@ public class ProfileTable
 			"_id integer primary key autoincrement, fi integer not null, userid text not null, " +
 			"userpass text, user_cred_1 text, user_cred_2 text, auth_token text, session_key text, " +
 			"session_expire text, mfa_answer_key text, session_cookie text, realm text" +
+			");",
+			"CREATE TABLE account (" +
+			"_id integer primary key autoincrement, session integer not null, desc text, " +
+			"phone text, type text, flags integer, status integer, bank_id text, branch_id text, " +
+			"acct_id text, acct_type text, acct_key text" +
 			");"
 		};
 
@@ -95,7 +110,8 @@ public class ProfileTable
 			"DROP TABLE IF EXISTS fi;",
 			"DROP TABLE IF EXISTS endpoint;",
 			"DROP TABLE IF EXISTS realm;",
-			"DROP TABLE IF EXISTS session;"
+			"DROP TABLE IF EXISTS session;",
+			"DROP TABLE IF EXISTS account;"
 		};
 
 		public OfxFiDefOpenHelper(Context context, String name,	CursorFactory factory, int version)
@@ -150,45 +166,7 @@ public class ProfileTable
 		}
 //		dbhelper.wipeTable(db);
 	}
-/*
-	public Cursor defList(String constraint)
-	{
-		if(constraint == null)
-		{
-			return db.query(TABLE_NAME, COLS_LIST, null, null, null, null, "name");
-		} else {
-			return db.query(TABLE_NAME, COLS_LIST, "name like ?", new String[] { "%" + constraint + "%" }, null, null, "name");
-		}
-	}
-	
-	public OfxFiDefinition getDefById(int id)
-	{
-		Cursor cur = db.query(TABLE_NAME, COLS_DEF, "_id=?", new String[] { Long.toString(id) }, null, null, null);
-		try
-		{
-			if(!cur.moveToNext()) return null;
-			
-			OfxFiDefinition def = new OfxFiDefinition();
-			def.defID = id;
-			def.name = cur.getString(0);
-			def.fiURL = cur.getString(1);
-			def.fiOrg = cur.getString(2);
-			def.fiID = cur.getString(3);
-			def.appId = cur.getString(4);
-			def.appVer = cur.getInt(5);
-			def.ofxVer = cur.getFloat(6);
-			def.simpleProf = cur.getInt(7) == 1;
-			def.srcName = cur.getString(8);
-			def.srcId = cur.getString(9);
-	
-			return def;
-		}
-		finally
-		{
-			cur.close();
-		}
-	}
-*/
+
 	public void pushProfile(OfxProfile profile)
 	{
 		if(profile.ID == 0)
@@ -562,7 +540,7 @@ public class ProfileTable
 	{
 		pushProfile(session.profile);
 		db.beginTransaction();
-		int fi_id;
+		int sess_id;
 		try
 		{
 			ContentValues newValue = new ContentValues();
@@ -579,8 +557,8 @@ public class ProfileTable
 			newValue.put("mfa_answer_key", session.mfaAnswerKey);
 			newValue.put("session_cookie", session.sessionCookie);
 
-			fi_id = (int)db.insertOrThrow("session", "fi", newValue);
-			session.ID = fi_id;
+			sess_id = (int)db.insertOrThrow("session", "fi", newValue);
+			session.ID = sess_id;
 			
 			db.setTransactionSuccessful();
 		}
@@ -588,7 +566,7 @@ public class ProfileTable
 		{
 			db.endTransaction();
 		}
-		return fi_id;
+		return sess_id;
 	}
 	
 	public LoginSession getSession(OfxProfile profile, int ID)
@@ -656,6 +634,221 @@ public class ProfileTable
 		finally
 		{
 			cur.close();
+		}
+	}
+
+	public void pushAccount(ServiceAcctInfo acct)
+	{
+		if(acct.ID == 0)
+		{
+			addAccount(acct);
+		} else {
+			updateAccount(acct);
+		}
+	}
+
+	private void updateAccount(ServiceAcctInfo acct)
+	{
+		updateSession(acct.session);
+		db.beginTransaction();
+		try
+		{
+			int flags = 0;
+			if(acct.detailAvail) flags = flags | AC_DETAIL_AVAIL;
+			if(acct.xferSource) flags = flags | AC_XFER_SOURCE;
+			if(acct.xferDest) flags = flags | AC_XFER_DEST;
+
+			ContentValues newValue = new ContentValues();
+			newValue.put("session", acct.session.ID);
+			newValue.put("desc", acct.desc);
+			newValue.put("flags", flags);
+			newValue.put("phone", acct.phone);
+			newValue.put("type", acct.type.toString());
+			newValue.put("status", acct.status);
+			if(acct.name != null)
+			{
+				newValue.put("bank_id", acct.name.bankId);
+				newValue.put("branch_id", acct.name.branchId);
+				newValue.put("acct_id", acct.name.acctId);
+				newValue.put("acct_type", acct.name.acctType);
+				newValue.put("acct_key", acct.name.acctKey);
+			} else {
+				newValue.putNull("bank_id");
+				newValue.putNull("branch_id");
+				newValue.putNull("acct_id");
+				newValue.putNull("acct_type");
+				newValue.putNull("acct_key");
+			}
+
+			String[] args = { Integer.toString(acct.ID) };
+			db.update("account", newValue, "_id=?", args);
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+	}
+
+	private int addAccount(ServiceAcctInfo acct)
+	{
+		pushSession(acct.session);
+		db.beginTransaction();
+		int acc_id;
+		try
+		{
+			ContentValues newValue = new ContentValues();
+
+			int flags = 0;
+			if(acct.detailAvail) flags = flags | AC_DETAIL_AVAIL;
+			if(acct.xferSource) flags = flags | AC_XFER_SOURCE;
+			if(acct.xferDest) flags = flags | AC_XFER_DEST;
+
+			newValue.put("session", acct.session.ID);
+			newValue.put("desc", acct.desc);
+			newValue.put("flags", flags);
+			newValue.put("phone", acct.phone);
+			newValue.put("type", acct.type.toString());
+			newValue.put("status", acct.status);
+			if(acct.name != null)
+			{
+				newValue.put("bank_id", acct.name.bankId);
+				newValue.put("branch_id", acct.name.branchId);
+				newValue.put("acct_id", acct.name.acctId);
+				newValue.put("acct_type", acct.name.acctType);
+				newValue.put("acct_key", acct.name.acctKey);
+			} else {
+				newValue.putNull("bank_id");
+				newValue.putNull("branch_id");
+				newValue.putNull("acct_id");
+				newValue.putNull("acct_type");
+				newValue.putNull("acct_key");
+			}
+
+			acc_id = (int)db.insertOrThrow("account", "fi", newValue);
+			acct.ID = acc_id;
+			
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+		return acc_id;
+	}
+
+	public ServiceAcctInfo getAccount(int ID)
+	{
+		String[] args = { Integer.toString(ID) };
+		Cursor cur = db.query("account", AC_COLS, "_id=?", args, null, null, null);
+		try
+		{
+			if(!cur.moveToNext()) return null;
+			ServiceAcctInfo acct = new ServiceAcctInfo();
+			LoginSession session = getSession(cur.getInt(0));
+			acct.session = session;
+			acct.ID = ID;
+			acct.desc = cur.getString(1);
+			acct.phone = cur.getString(2);
+			acct.type = ServiceAcctName.ServiceType.valueOf(cur.getString(3));
+			int flags = cur.getInt(4);
+			acct.status = cur.getInt(5);
+			acct.detailAvail = (flags & AC_DETAIL_AVAIL) != 0;
+			acct.xferSource = (flags & AC_XFER_SOURCE) != 0;
+			acct.xferDest = (flags & AC_XFER_DEST) != 0;
+
+			acct.name.type = acct.type;
+			acct.name.bankId = cur.getString(6);
+			acct.name.branchId = cur.getString(7);
+			acct.name.acctId = cur.getString(8);
+			acct.name.acctType = cur.getString(9);
+			acct.name.acctKey = cur.getString(10);
+
+			return acct;
+		}
+		finally
+		{
+			cur.close();
+		}
+	}
+	
+	public List<ServiceAcctInfo> getAccountsBySession(int ID)
+	{
+		String[] args = { Integer.toString(ID) };
+		Cursor cur = db.query("account", AC_COLS, "session=?", args, null, null, null);
+		List<ServiceAcctInfo> results = new LinkedList<ServiceAcctInfo>();
+		try
+		{
+			while(cur.moveToNext())
+			{
+				ServiceAcctInfo acct = new ServiceAcctInfo();
+				LoginSession session = getSession(cur.getInt(0));
+				acct.session = session;
+				acct.ID = ID;
+				acct.desc = cur.getString(1);
+				acct.phone = cur.getString(2);
+				acct.type = ServiceAcctName.ServiceType.valueOf(cur.getString(3));
+				int flags = cur.getInt(4);
+				acct.status = cur.getInt(5);
+				acct.detailAvail = (flags & AC_DETAIL_AVAIL) != 0;
+				acct.xferSource = (flags & AC_XFER_SOURCE) != 0;
+				acct.xferDest = (flags & AC_XFER_DEST) != 0;
+	
+				acct.name.type = acct.type;
+				acct.name.bankId = cur.getString(6);
+				acct.name.branchId = cur.getString(7);
+				acct.name.acctId = cur.getString(8);
+				acct.name.acctType = cur.getString(9);
+				acct.name.acctKey = cur.getString(10);
+				results.add(acct);
+			}
+			return results;
+		}
+		finally
+		{
+			cur.close();
+		}
+	}
+
+	public void syncAccounts(LoginSession session, List<ServiceAcctInfo> accts)
+	{
+		// first figure out what we've got
+		Map<ServiceAcctName,Integer> vals = new TreeMap<ServiceAcctName,Integer>();
+		String[] queryArgs = { Integer.toString(session.ID) };
+		Cursor cur = db.query("account", AC_COLS, "session=?", queryArgs, null, null, null);
+		while(cur.moveToNext())
+		{
+			ServiceAcctName name = new ServiceAcctName();
+			name.type = ServiceAcctName.ServiceType.valueOf(cur.getString(3));
+			name.bankId = cur.getString(6);
+			name.branchId = cur.getString(7);
+			name.acctId = cur.getString(8);
+			name.acctType = cur.getString(9);
+			name.acctKey = cur.getString(10);
+			int ID = cur.getInt(11);
+			if(!vals.containsKey(name)) vals.put(name, ID);
+		}
+		cur.close();
+		
+		for(ServiceAcctInfo acct : accts)
+		{
+			if(acct.name != null)
+			{
+				if(vals.containsKey(acct.name))
+				{
+					acct.ID = vals.get(acct.name);
+					vals.remove(acct.name);
+					updateAccount(acct);
+				} else {
+					addAccount(acct);
+				}
+			}
+		}
+		
+		for(Integer delAcct : vals.values())
+		{
+			String[] args = { delAcct.toString() };
+			db.execSQL("DELETE FROM account WHERE id=?", args);
 		}
 	}
 }

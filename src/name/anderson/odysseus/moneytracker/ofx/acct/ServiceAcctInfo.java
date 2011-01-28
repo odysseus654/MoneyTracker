@@ -1,6 +1,6 @@
 package name.anderson.odysseus.moneytracker.ofx.acct;
 
-import name.anderson.odysseus.moneytracker.ofx.TransferObject;
+import name.anderson.odysseus.moneytracker.ofx.*;
 
 public class ServiceAcctInfo
 {
@@ -8,12 +8,17 @@ public class ServiceAcctInfo
 	public static final int STAT_PEND = 2;
 	public static final int STAT_ACTIVE = 3;
 	
+	public String desc;
+	public String phone;
+
 	public ServiceAcctName.ServiceType type;
 	public boolean detailAvail;
 	public boolean xferSource;
 	public boolean xferDest;
 	public int status;
 	public ServiceAcctName name;
+	public LoginSession session;
+	public int ID;
 
 	public ServiceAcctInfo(ServiceAcctName.ServiceType t, TransferObject in)
 	{
@@ -58,5 +63,10 @@ public class ServiceAcctInfo
 			break;
 		}
 		if(sub != null) this.name = new ServiceAcctName(type, sub);
+	}
+
+	public ServiceAcctInfo()
+	{
+		this.name = new ServiceAcctName();
 	}
 }

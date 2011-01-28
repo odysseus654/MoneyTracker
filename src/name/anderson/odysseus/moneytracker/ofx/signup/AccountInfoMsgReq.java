@@ -35,5 +35,4 @@ public class AccountInfoMsgReq extends OfxMessageReq
 	{
 		return new AccountInfoMsgResp(tran, obj);
 	}
-
 }

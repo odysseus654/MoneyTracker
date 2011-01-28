@@ -270,8 +270,7 @@ public class VerifyProfile extends Activity implements Runnable
 			db.close();
 		}
 		
-		int _i = 0;
-		Intent nextIntent = new Intent(this, profile.requiresRealmPrompt() ? RealmLogin.class : Login.class);
+		Intent nextIntent = new Intent(this, Login.class);
 		Bundle bdl = new Bundle();
 		bdl.putInt("prof_id", profile.ID);
 		nextIntent.putExtras(bdl);

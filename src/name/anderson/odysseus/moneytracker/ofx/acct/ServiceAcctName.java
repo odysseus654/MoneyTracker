@@ -1,10 +1,13 @@
 package name.anderson.odysseus.moneytracker.ofx.acct;
 
+import name.anderson.odysseus.moneytracker.ofx.OfxMessageReq;
 import name.anderson.odysseus.moneytracker.ofx.TransferObject;
 
-public class ServiceAcctName
+public class ServiceAcctName implements Comparable<ServiceAcctName>
 {
 	public enum ServiceType { BANK, CC, LOAN };
+	public static final OfxMessageReq.MessageSet[] MSG_MAP
+		= { OfxMessageReq.MessageSet.BANK, OfxMessageReq.MessageSet.CREDITCARD, OfxMessageReq.MessageSet.LOAN };
 	
 	public ServiceType type;
 	public String bankId;
@@ -33,6 +36,10 @@ public class ServiceAcctName
 		}
 	}
 
+	public ServiceAcctName()
+	{
+	}
+
 	public void populateRequest(TransferObject obj, float msgsetVer)
 	{
 		switch(this.type)
@@ -53,5 +60,43 @@ public class ServiceAcctName
 			obj.put("LOANACCTTYPE", this.acctType);
 			break;
 		}
+	}
+	
+	private <T extends Comparable<T>> int compareObj(T left, T right)
+	{
+		if(left != null && right != null)
+		{
+			int test = left.compareTo(right);
+			if(test != 0) return test;
+		}
+		else if(left != null || right != null)
+		{
+			return left == null ? -1 : +1;
+		}
+		return 0;
+	}
+
+	@Override
+	public int compareTo(ServiceAcctName another)
+	{
+		int test = compareObj(type, another.type);
+		if(test != 0) return test;
+
+		test = compareObj(bankId, another.bankId);
+		if(test != 0) return test;
+
+		test = compareObj(branchId, another.branchId);
+		if(test != 0) return test;
+
+		test = compareObj(acctId, another.acctId);
+		if(test != 0) return test;
+
+		test = compareObj(acctType, another.acctType);
+		if(test != 0) return test;
+
+		test = compareObj(acctKey, another.acctKey);
+		if(test != 0) return test;
+
+		return 0;
 	}
 }

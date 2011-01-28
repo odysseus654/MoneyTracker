@@ -27,6 +27,7 @@ public class Login extends Activity implements Runnable
 	private SignonRealm realm;
 	//private SignonMsgReq lastAttempt;
 	private int sessionId;
+	private final static int GET_REALM = 1011;
 
 	private boolean requireAuthToken;	// set in response to STATUS_AUTHTOKEN_REQUIRED
 	
@@ -36,6 +37,14 @@ public class Login extends Activity implements Runnable
 	CharSequence userCred2;
 	CharSequence authToken;
 	
+	private DialogInterface.OnClickListener dismissOnOk = new DialogInterface.OnClickListener()
+	{
+		public void onClick(DialogInterface dialog, int which)
+		{
+			cancel();
+		}
+	};
+
 /*
 	public boolean reqUserkey;	// session: request
 	public String userkey;		// session: login response
@@ -66,14 +75,6 @@ public class Login extends Activity implements Runnable
 			realmName = savedInstanceState.getString("login_realm");
 		}
 		
-		DialogInterface.OnClickListener dismissOnOk = new DialogInterface.OnClickListener()
-		{
-			public void onClick(DialogInterface dialog, int which)
-			{
-				cancel();
-			}
-		};
-
 		ProfileTable db = new ProfileTable(this);
 		LoginSession session = null;
 		try
@@ -142,11 +143,37 @@ public class Login extends Activity implements Runnable
 			}
 			else if(profile.requiresRealmPrompt())
 			{
-				int _i = 0;
+				Intent realmProf = new Intent(this, RealmLogin.class);
+				realmProf.putExtra("prof_id", profile.ID);
+				startActivityForResult(realmProf, GET_REALM);
+				return;
 			}
 		}
 
 		buildView();
+	}
+	
+	@Override
+	protected void onActivityResult (int requestCode, int resultCode, Intent data) 
+	{
+		if(requestCode == GET_REALM)
+		{
+			if(resultCode == RESULT_CANCELED)
+			{
+				cancel();
+				return;
+			} else {
+				String realmName = data.getStringExtra("login_realm");
+				if(realmName != null && profile.realms.containsKey(realmName))
+				{
+					this.realm = profile.realms.get(realmName);
+				} else {
+					Utilities.buildAlert(this, null, "Unexpected bad realm name received", "Internal Error", dismissOnOk);
+					return;
+				}
+				buildView();
+			}
+		}
 	}
 	
 	private void buildView()

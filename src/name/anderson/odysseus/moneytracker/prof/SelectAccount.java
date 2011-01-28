@@ -5,23 +5,24 @@ package name.anderson.odysseus.moneytracker.prof;
 
 import java.net.*;
 import java.util.List;
-
 import javax.net.ssl.*;
 import org.apache.http.client.*;
 import org.xmlpull.v1.XmlPullParserException;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.*;
+import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctInfo;
+import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctName;
 import name.anderson.odysseus.moneytracker.ofx.prof.ProfileMsgResp;
 import name.anderson.odysseus.moneytracker.ofx.signup.*;
 import android.app.*;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteException;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.view.View;
-import android.widget.TextView;
+import android.os.*;
+import android.view.*;
+import android.widget.*;
 
 /**
  * @author Erik
@@ -32,6 +33,8 @@ public class SelectAccount extends ListActivity implements Runnable
 	private LoginSession session;
 	ProgressDialog prog;
 	private Thread queryThread;
+	private List<ServiceAcctInfo> accountList;
+	private final static int GET_SESSION = 1010;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -42,17 +45,48 @@ public class SelectAccount extends ListActivity implements Runnable
 		Bundle parms = getIntent().getExtras();
 		int sessionId = parms.getInt("sess_id");
 		
-//		if(sessionId == 0)
-//		{
-//		}
+		if(sessionId == 0)
+		{
+			loginFailure();
+		}
 		
-//		if(savedInstanceState != null)
-//		{
-//		}
+		if(savedInstanceState != null)
+		{
+			sessionId = savedInstanceState.getInt("sess_id");
+		}
 		
 		loadContext(sessionId);
 	}
 		
+	@Override
+	protected void onSaveInstanceState(Bundle outState)
+	{
+		super.onSaveInstanceState(outState);
+		if(this.session != null) outState.putInt("sess_id", this.session.ID);
+	}
+	
+	void loginFailure()
+	{
+		Intent loginProf = new Intent(this, Login.class);
+		startActivityForResult(loginProf, GET_SESSION);
+	}
+	
+	@Override
+	protected void onActivityResult (int requestCode, int resultCode, Intent data) 
+	{
+		if(requestCode == GET_SESSION)
+		{
+			if(resultCode == RESULT_CANCELED)
+			{
+				cancel();
+				return;
+			} else {
+				int sessionId = data.getIntExtra("sess_id", 0);
+				loadContext(sessionId);
+			}
+		}
+	}
+	
 	private void loadContext(int sessionId)
 	{
 		DialogInterface.OnClickListener dismissOnOk = new DialogInterface.OnClickListener()
@@ -67,33 +101,53 @@ public class SelectAccount extends ListActivity implements Runnable
 		try
 		{
 			db.open();
-			session = db.getSession(sessionId);
-		}
-		catch(SQLiteException e)
-		{
-			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to retrieve profile", "Internal Error", dismissOnOk);
-			dlg.show();
-			return;
+			
+			try
+			{
+				session = db.getSession(sessionId);
+			}
+			catch(SQLiteException e)
+			{
+				AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to retrieve profile", "Internal Error", dismissOnOk);
+				dlg.show();
+				return;
+			}
+
+			if(session == null)
+			{
+				AlertDialog dlg = Utilities.buildAlert(this, null, "Could not find login session", "Internal Error", dismissOnOk);
+				dlg.show();
+				return;
+			}
+			
+	//		if(savedInstanceState != null)
+	//		{
+	//		}
+	//		else if(session != null)
+	//		{
+	//		}
+			
+			try
+			{
+				accountList = db.getAccountsBySession(sessionId);
+			}
+			catch(SQLiteException e)
+			{
+				AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to retrieve accounts", "Internal Error", dismissOnOk);
+				dlg.show();
+				return;
+			}
 		}
 		finally
 		{
 			db.close();
 		}
-		if(session == null)
+		if(accountList == null)
 		{
-			AlertDialog dlg = Utilities.buildAlert(this, null, "Could not find login session", "Internal Error", dismissOnOk);
-			dlg.show();
-			return;
+			requestAccountList();
+		} else {
+			buildView();
 		}
-		
-//		if(savedInstanceState != null)
-//		{
-//		}
-//		else if(session != null)
-//		{
-//		}
-		
-		buildView();
 	}
 	
 	void requestAccountList()
@@ -111,9 +165,74 @@ public class SelectAccount extends ListActivity implements Runnable
 		queryThread.setDaemon(true);
 		queryThread.start();
 	}
+	
+	private static class AcctInfoAdapter extends BaseAdapter
+	{
+		private Context context;
+		private ServiceAcctInfo[] acctList;
+		private String[] msgsetNames;
+		
+		public AcctInfoAdapter(Context mContext, ServiceAcctInfo[] accts)
+		{
+			context = mContext;
+			acctList = accts;
+			msgsetNames = context.getResources().getStringArray(R.array.message_set);
+		}
 
+		@Override
+		public int getCount()
+		{
+			return acctList.length;
+		}
+
+		@Override
+		public Object getItem(int position)
+		{
+			return acctList[position];
+		}
+
+		@Override
+		public long getItemId(int position)
+		{
+			return position;
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent)
+		{
+			RelativeLayout rowLayout;
+			ServiceAcctInfo acct = acctList[position];
+			if (convertView == null) {
+				rowLayout = (RelativeLayout) LayoutInflater.from(context).inflate(R.layout.realm_login_row, parent, false);
+			} else {
+				rowLayout = (RelativeLayout) convertView;
+			}
+
+			String acctType = msgsetNames[ServiceAcctName.MSG_MAP[acct.type.ordinal()].ordinal()];
+			((TextView)rowLayout.findViewById(R.id.Name)).setText(acct.desc);
+			((TextView)rowLayout.findViewById(R.id.TaskList)).setText(acctType);
+
+			return rowLayout;
+		}
+	}
+	
 	private void buildView()
 	{
+		ServiceAcctInfo[] tempList = new ServiceAcctInfo[accountList.size()];
+		final ServiceAcctInfo[] acctList = accountList.toArray(tempList);
+		AcctInfoAdapter adapter = new AcctInfoAdapter(this, acctList);
+		setListAdapter(adapter);
+
+		ListView lv = getListView();
+		lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+		lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
+		{
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
+			{
+				acctSelected(acctList[pos]);
+			}
+		});
 	}
 	
 	void cancel()
@@ -181,7 +300,7 @@ public class SelectAccount extends ListActivity implements Runnable
 			switch(msg.what)
 			{
 			case QH_OK:
-				requestComplete();
+				buildView();
 				break;
 			case QH_EMPTY:
 				doAlert(null, "Server gave an unexpected response (no signon acknowledgement?)");
@@ -261,6 +380,7 @@ public class SelectAccount extends ListActivity implements Runnable
 	    		{
 	    			AccountInfoMsgResp acctResp = (AccountInfoMsgResp)resp;
 	    			session.profile.acctListAge = acctResp.acctListAge;
+	    			accountList = acctResp.accounts;
 	    		}
 	    	}
         } catch (HttpResponseException e) {
@@ -283,6 +403,20 @@ public class SelectAccount extends ListActivity implements Runnable
 			sendExceptionMsg(QH_ERR, e);
 		}
 		
+		ProfileTable db = new ProfileTable(this);
+		try
+		{
+			db.open();
+			db.syncAccounts(session, accountList);
+		}
+		catch(SQLiteException e) {
+			sendExceptionMsg(QH_ERR, e);
+		}
+		finally
+		{
+			db.close();
+		}
+
 		queryHandler.sendEmptyMessage(QH_OK);
 	}
 }

@@ -8,7 +8,6 @@ import java.security.cert.*;
 import java.util.*;
 import javax.net.ssl.*;
 import name.anderson.odysseus.moneytracker.Utilities;
-import name.anderson.odysseus.moneytracker.ofx.prof.MsgSetInfo;
 import name.anderson.odysseus.moneytracker.ofx.signon.SignonMsgReq;
 import org.apache.http.*;
 import org.apache.http.client.*;

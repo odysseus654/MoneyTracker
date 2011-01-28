@@ -34,11 +34,13 @@ public class RealmLogin extends ListActivity
 	{
 		private Context context;
 		private RealmInfo[] realmList;
+		private String[] msgsetNames;
 		
 		public RealmInfoAdapter(Context mContext, RealmInfo[] realms)
 		{
 			context = mContext;
 			realmList = realms;
+			msgsetNames = context.getResources().getStringArray(R.array.message_set);
 		}
 
 		@Override
@@ -71,7 +73,6 @@ public class RealmLogin extends ListActivity
 			}
 
 			String members = null;
-			String[] msgsetNames = context.getResources().getStringArray(R.array.message_set);
 			for(OfxMessageReq.MessageSet msgset : rinfo.members)
 			{
 				members = (members == null) ? msgsetNames[msgset.ordinal()] : members + '\n' + msgsetNames[msgset.ordinal()];
@@ -183,16 +184,12 @@ public class RealmLogin extends ListActivity
 		finish();
 	}
 	
-	private static final int BEGIN_LOGIN = 1234;
-	
 	void realmSelected(RealmInfo realm)
 	{
-		int _i = 0;
-		Intent nextIntent = new Intent(this, Login.class);
-		Bundle bdl = new Bundle();
-		bdl.putInt("prof_id", profile.ID);
-		bdl.putString("login_realm", realm.name);
-		nextIntent.putExtras(bdl);
-		startActivityForResult(nextIntent, BEGIN_LOGIN);
+		Intent i = getIntent();
+		i.putExtra("prof_id", profile.ID);
+		i.putExtra("login_realm", realm.name);
+		setResult(RESULT_OK, i);
+		finish();
 	}
 }
