@@ -19,19 +19,22 @@ public class TransferObject
 		public String name;
 		public String attrValue;
 		public TransferObject child;
+		public boolean secure;
 		
 		public ObjValue(String n, String v)
 		{
 			name = n;
 			attrValue = v;
+			secure = false;
 		}
 
 		public ObjValue(String n, TransferObject v)
 		{
 			name = n;
 			child = v;
+			secure = false;
 		}
-}
+	}
 	
 	public TransferObject(String n)
 	{
@@ -43,6 +46,17 @@ public class TransferObject
 	public void put(String key, String value)
 	{
 		ObjValue val = new ObjValue(key, value);
+		this.members.add(val);
+		if(!this.memberNames.containsKey(key))
+		{
+			this.memberNames.put(key, val);
+		}
+	}
+	
+	public void putSecure(String key, String value)
+	{
+		ObjValue val = new ObjValue(key, value);
+		val.secure = true;
 		this.members.add(val);
 		if(!this.memberNames.containsKey(key))
 		{

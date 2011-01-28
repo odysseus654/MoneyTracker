@@ -32,10 +32,6 @@ public class MoneyTrackerEntry extends Activity {
         	
         	OfxRequest req = pro.newRequest();
         	req.addRequest(pro.createAnonymousSignon());
-        	ChallengeMsgReq challenge = new ChallengeMsgReq();
-        	challenge.userid = "222781";
-        	req.addRequest(challenge);
-        	//String str3 = req.Format(true);
 
 			TransferObject obj = new TransferObject("OFX");
 			obj.put(OfxRequest.BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, req.contents, 1.1f, null));

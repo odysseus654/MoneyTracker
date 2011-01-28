@@ -64,7 +64,7 @@ public class SignonMsgReq extends OfxMessageReq
 		else if(this.userid != null && this.userpass != null)
 		{
 			obj.put("USERID", this.userid);
-			obj.put("USERPASS", this.userpass);
+			obj.putSecure("USERPASS", this.userpass);
 			if(msgsetVer == 1.2 && this.authToken != null)
 			{
 				obj.put("ONETIMEPASS", this.authToken);
@@ -91,9 +91,9 @@ public class SignonMsgReq extends OfxMessageReq
 		obj.put("APPID", this.appId);
 		obj.put("APPVER", String.format("%04d", this.appVer));
 		if(this.clientUid != null) obj.put("CLIENTUID", this.clientUid);
-		if(this.userCred1 != null) obj.put("USERCRED1", this.userCred1);
-		if(this.userCred2 != null) obj.put("USERCRED2", this.userCred2);
-		if(this.authToken != null) obj.put("AUTHTOKEN", this.authToken);
+		if(this.userCred1 != null) obj.putSecure("USERCRED1", this.userCred1);
+		if(this.userCred2 != null) obj.putSecure("USERCRED2", this.userCred2);
+		if(this.authToken != null) obj.putSecure("AUTHTOKEN", this.authToken);
 		if(this.accessKey != null) obj.put("ACCESSKEY", this.accessKey);
 		if(this.mfaChallenges != null)
 		{
