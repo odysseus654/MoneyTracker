@@ -304,11 +304,7 @@ public class ProfileTable
 						profile.endpoints.put(info.URL, ep);
 					}
 					ep.msgsetInfo.put(msgset, info);
-					
-					if(msgset != OfxMessageReq.MessageSet.SIGNON && msgset != OfxMessageReq.MessageSet.SIGNUP)
-					{
-						profile.msgsetMap.put(msgset, info);
-					}
+					profile.msgsetMap.put(msgset, info);
 				}
 			}
 		}
@@ -553,7 +549,7 @@ public class ProfileTable
 			newValue.put("user_cred_2", session.userCred2);
 			newValue.put("auth_token", session.authToken);
 			newValue.put("session_key", session.sessionkey);
-			newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
+			if(session.sessionExpire != null) newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
 			newValue.put("mfa_answer_key", session.mfaAnswerKey);
 			newValue.put("session_cookie", session.sessionCookie);
 
@@ -802,7 +798,7 @@ public class ProfileTable
 				acct.name.acctKey = cur.getString(10);
 				results.add(acct);
 			}
-			return results;
+			return results.size() == 0 ? null : results;
 		}
 		finally
 		{

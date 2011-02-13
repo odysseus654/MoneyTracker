@@ -12,7 +12,6 @@ import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.*;
 import name.anderson.odysseus.moneytracker.ofx.acct.*;
-import name.anderson.odysseus.moneytracker.ofx.prof.ProfileMsgResp;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import android.app.*;
 import android.content.Context;
@@ -234,6 +233,17 @@ public class SelectAccount extends ListActivity implements Runnable
 		setResult(RESULT_CANCELED);
 		finish();
 	}
+	
+	void acctSelected(ServiceAcctInfo acct)
+	{
+		DialogInterface.OnClickListener emptyClickListener = new DialogInterface.OnClickListener()
+		{
+			public void onClick(DialogInterface dialog, int which) { }
+		};
+		AlertDialog dlg = Utilities.buildAlert(SelectAccount.this, null, "Nothing more to do", "Login Error", emptyClickListener);
+		dlg.show();
+		int _i = 0;
+	}
 
 	private static final int QH_OK = 0;
 	private static final int QH_ERR_STATUS = 1;
@@ -360,9 +370,10 @@ public class SelectAccount extends ListActivity implements Runnable
 	@Override
 	public void run()
 	{
-    	OfxRequest req = session.profile.newRequest();
+    	OfxRequest req = session.newRequest();
     	AccountInfoMsgReq acctReq = new AccountInfoMsgReq();
     	acctReq.acctListAge = session.profile.acctListAge;
+    	req.addRequest(acctReq);
 
     	List<OfxMessageResp> response;
         try {

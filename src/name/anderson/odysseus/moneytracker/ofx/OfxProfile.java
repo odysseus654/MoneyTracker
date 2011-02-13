@@ -32,17 +32,15 @@ public class OfxProfile
 	public boolean profileIsUser;
 	public int parentID;
 	public int ID;
-	public LoginSession session;
 
 	public Map<String,Endpoint> endpoints;
 	public Map<String,SignonRealm> realms;
-	public Map<String,Login> realmLogins;
 	public Map<OfxMessageReq.MessageSet, MsgSetInfo> msgsetMap;
 	
-	final static float DEFAULT_OFX_2x = 2.11f;
-	final static float DEFAULT_OFX_1x = 1.6f;
-	final static String FALLBACK_APP_ID = "QWIN";
-	final static int FALLBACK_APP_VER = 1900;
+	private final static float DEFAULT_OFX_2x = 2.11f;
+	private final static float DEFAULT_OFX_1x = 1.6f;
+	private final static String FALLBACK_APP_ID = "QWIN";
+	private final static int FALLBACK_APP_VER = 1900;
 	
 	public static class Endpoint
 	{
@@ -53,15 +51,7 @@ public class OfxProfile
 			msgsetInfo = new TreeMap<OfxMessageReq.MessageSet, MsgSetInfo>();
 		}
 	}
-	
-	public static class Login
-	{
-		public String  userid;
-		public String  userpass;
-		public String  userkey;
-		public String  sessCookie;
-	}
-	
+
 	public OfxProfile()
 	{
 		this.useExpectContinue = true;
@@ -77,7 +67,6 @@ public class OfxProfile
 	{
 		OfxRequest req = new OfxRequest(this);
 		req.version = this.fidef.ofxVer == 0 ? DEFAULT_OFX_2x : this.fidef.ofxVer;
-		req.anonymous = true;
 		SignonMsgReq son = createAnonymousSignon(); 
         req.addRequest(son);
         req.addRequest(newProfRequest(false));
@@ -284,10 +273,7 @@ public class OfxProfile
 					}
 					
 					thisEP.msgsetInfo.put(thisSet, info);
-					if(thisSet != OfxMessageReq.MessageSet.SIGNON && thisSet != OfxMessageReq.MessageSet.SIGNUP)
-					{
-						newMap.put(thisSet, info);
-					}
+					newMap.put(thisSet, info);
 				}
 			}
 		}
@@ -308,47 +294,6 @@ public class OfxProfile
 		this.endpoints = newEPs;
 		this.realms = newRealms;
 		this.msgsetMap = newMap;
-	}
-
-	public void handleSignonResponse(Context ctx, SignonMsgResp resp)
-	{
-		if(this.session == null || this.session.ID == 0) return;
-		boolean changed = false;
-		
-		if(resp.userKey != null)
-		{
-			this.session.sessionkey = resp.userKey;
-			changed = true;
-		}
-		if(resp.tsKeyExpire != null)
-		{
-			this.session.sessionExpire = resp.tsKeyExpire;
-			changed = true;
-		}
-		if(resp.sessCookie != null)
-		{
-			this.session.sessionCookie = resp.sessCookie;
-			changed = true;
-		}
-		if(resp.accessKey != null)
-		{
-			this.session.mfaAnswerKey = resp.accessKey;
-			changed = true;
-		}
-		
-		if(changed)
-		{
-			ProfileTable db = new ProfileTable(ctx);
-			try
-			{
-				db.open();
-				db.pushSession(this.session);
-			}
-			finally
-			{
-				db.close();
-			}
-		}
 	}
 
 	private boolean isVersionAcceptible(float msgsetVer)
@@ -378,56 +323,16 @@ public class OfxProfile
 		{
 			return this.fidef.fiURL;
 		}
-		else if(!this.msgsetMap.containsKey(thisSet))
-		{
-			return null;
-		}
-		else
+		else if(thisSet != null && this.msgsetMap.containsKey(thisSet))
 		{
 			return this.msgsetMap.get(thisSet).URL;
 		}
-	}
-
-	public SignonMsgReq createSignon(OfxMessageReq.MessageSet msgset)
-	{
-		String realm;
-		if(this.msgsetMap == null)
-		{
-			realm = "";
-		}
-		else if(!this.msgsetMap.containsKey(msgset))
+		else
 		{
 			return null;
 		}
-		else
-		{
-			MsgSetInfo info = this.msgsetMap.get(msgset);
-			realm = info.realm == null ? "" : info.realm.name;
-		}
-		if(this.realmLogins == null || !this.realmLogins.containsKey(realm))
-		{
-			return createAnonymousSignon();
-		} else {
-			return createSignon(this.realmLogins.get(realm));
-		}
 	}
 
-	public SignonMsgReq createSignon(Login login)
-	{
-        SignonMsgReq son = createAnonymousSignon();
-        if(login.userkey != null)
-        {
-        	son.userkey = login.userkey;
-        }
-        else if(login.userid != null && login.userpass != null)
-        {
-        	son.userid = login.userid;
-        	son.userpass = login.userpass;
-        }
-        son.sessCookie = login.sessCookie;
-        return son;
-	}
-	
 	public SignonMsgReq createAnonymousSignon()
 	{
         SignonMsgReq son = new SignonMsgReq();
