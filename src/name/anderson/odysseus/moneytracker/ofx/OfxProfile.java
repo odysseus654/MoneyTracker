@@ -3,21 +3,17 @@
  */
 package name.anderson.odysseus.moneytracker.ofx;
 
+import android.content.Context;
 import java.io.*;
-import java.net.ConnectException;
-import java.net.SocketException;
+import java.net.*;
 import java.security.cert.X509Certificate;
 import java.util.*;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpResponseException;
-import org.xmlpull.v1.XmlPullParserException;
+import javax.net.ssl.*;
 import name.anderson.odysseus.moneytracker.ofx.prof.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import name.anderson.odysseus.moneytracker.prof.OfxFiDefinition;
+import org.apache.http.client.*;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * @author Erik Anderson
@@ -77,7 +73,7 @@ public class OfxProfile
 		this.fidef = src != null ? src : new OfxFiDefinition();
 	}
 	
-	public void negotiate() throws XmlPullParserException, IOException
+	public void negotiate(Context ctx) throws XmlPullParserException, IOException
 	{
 		OfxRequest req = new OfxRequest(this);
 		req.version = this.fidef.ofxVer == 0 ? DEFAULT_OFX_2x : this.fidef.ofxVer;
@@ -89,7 +85,7 @@ public class OfxProfile
     	List<OfxMessageResp> response;
         for(;;) {
 	        try {
-	        	response = req.submit();
+	        	response = req.submit(ctx);
 	        }
 	        catch(HttpResponseException e)
 	        {
@@ -312,6 +308,47 @@ public class OfxProfile
 		this.endpoints = newEPs;
 		this.realms = newRealms;
 		this.msgsetMap = newMap;
+	}
+
+	public void handleSignonResponse(Context ctx, SignonMsgResp resp)
+	{
+		if(this.session == null || this.session.ID == 0) return;
+		boolean changed = false;
+		
+		if(resp.userKey != null)
+		{
+			this.session.sessionkey = resp.userKey;
+			changed = true;
+		}
+		if(resp.tsKeyExpire != null)
+		{
+			this.session.sessionExpire = resp.tsKeyExpire;
+			changed = true;
+		}
+		if(resp.sessCookie != null)
+		{
+			this.session.sessionCookie = resp.sessCookie;
+			changed = true;
+		}
+		if(resp.accessKey != null)
+		{
+			this.session.mfaAnswerKey = resp.accessKey;
+			changed = true;
+		}
+		
+		if(changed)
+		{
+			ProfileTable db = new ProfileTable(ctx);
+			try
+			{
+				db.open();
+				db.pushSession(this.session);
+			}
+			finally
+			{
+				db.close();
+			}
+		}
 	}
 
 	private boolean isVersionAcceptible(float msgsetVer)

@@ -507,7 +507,7 @@ public class Login extends Activity implements Runnable
 
     	List<OfxMessageResp> response;
         try {
-			response = req.submit();
+			response = req.submit(this);
 		} catch (HttpResponseException e) {
 			sendExceptionMsg(QH_ERR_STATUS, e);
 			return;

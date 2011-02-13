@@ -8,7 +8,7 @@ import java.security.cert.*;
 import java.util.*;
 import javax.net.ssl.*;
 import name.anderson.odysseus.moneytracker.Utilities;
-import name.anderson.odysseus.moneytracker.ofx.signon.SignonMsgReq;
+import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.HttpPost;
@@ -19,6 +19,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.params.*;
 import org.xmlpull.v1.XmlPullParserException;
+
+import android.content.Context;
 
 /**
  * @author Erik Anderson
@@ -97,17 +99,17 @@ public class OfxRequest
 		return FormatHeader(false, this.version) + req.Format(this.version);
 	}
 
-	public List<OfxMessageResp> submit() throws IOException, XmlPullParserException
+	public List<OfxMessageResp> submit(Context ctx) throws IOException, XmlPullParserException
 	{
-		return submit(null, false);
+		return submit(ctx, null, false);
 	}
 
-	public List<OfxMessageResp> submit(OfxMessageReq.MessageSet msgsetHint) throws IOException, XmlPullParserException
+	public List<OfxMessageResp> submit(Context ctx, OfxMessageReq.MessageSet msgsetHint) throws IOException, XmlPullParserException
 	{
-		return submit(msgsetHint, false);
+		return submit(ctx, msgsetHint, false);
 	}
 
-	public List<OfxMessageResp> submit(OfxMessageReq.MessageSet msgsetHint, boolean noAutoSon) throws IOException, XmlPullParserException
+	public List<OfxMessageResp> submit(Context ctx, OfxMessageReq.MessageSet msgsetHint, boolean noAutoSon) throws IOException, XmlPullParserException
 	{
 		SortedMap<OfxMessageReq.MessageSet, List<OfxMessageReq> > requestSets
 		= new TreeMap<OfxMessageReq.MessageSet, List<OfxMessageReq> >();
@@ -199,6 +201,10 @@ public class OfxRequest
 			List<OfxMessageResp> list = parseResponse(r);
 			for(OfxMessageResp resp : list)
 			{
+				if(resp instanceof SignonMsgResp)
+				{
+					this.profile.handleSignonResponse(ctx, (SignonMsgResp)resp);
+				}
 				if(resp.trn != null && resp.trn.status != null && resp.trn.status.sev == StatusResponse.ST_ERROR)
 				{
 					throw new OfxError(resp.trn.status);
