@@ -96,7 +96,7 @@ public class OfxRequest
 			req.put(BuildMsgSet(thisSet, requestSets.get(thisSet), this.profile.getMsgsetVer(this.version, thisSet), thisSon));
 		}
 
-		return FormatHeader(false, this.version) + req.Format(this.version);
+		return FormatHeader(this.version) + req.Format(this.version);
 	}
 
 	public List<OfxMessageResp> submit(Context ctx) throws IOException, XmlPullParserException
@@ -137,7 +137,6 @@ public class OfxRequest
 		}
 		
 		SortedMap<String, TransferObject> requests = new TreeMap<String, TransferObject>();
-		Set<String> encrypted = new TreeSet<String>();
 
 		for(OfxMessageReq.MessageSet thisSet : requestSets.keySet())
 		{
@@ -197,7 +196,7 @@ public class OfxRequest
 		for(String endpoint : requests.keySet())
 		{
 			TransferObject req = requests.get(endpoint);
-			Reader r = submit(encrypted.contains(endpoint), endpoint, req);
+			Reader r = submit(endpoint, req);
 			List<OfxMessageResp> list = parseResponse(r);
 			for(OfxMessageResp resp : list)
 			{
@@ -279,11 +278,11 @@ public class OfxRequest
 		}
 	}
 
-	public Reader submit(boolean security, String endpoint, TransferObject reqObj) throws IOException
+	public Reader submit(String endpoint, TransferObject reqObj) throws IOException
 	{
 		HttpClient client = buildClient();
 		HttpPost post = new HttpPost(endpoint);
-		String strReq = FormatHeader(security, this.version) + reqObj.Format(this.version);
+		String strReq = FormatHeader(this.version) + reqObj.Format(this.version);
 		StringEntity request = new StringEntity(strReq);
 		post.setEntity(request);
 		post.addHeader("Content-type", "application/x-ofx");
@@ -327,7 +326,7 @@ public class OfxRequest
         }
 	}
 
-	private String FormatHeader(boolean security, float version)
+	private String FormatHeader(float version)
 	{
 		UUID newFileUid = UUID.randomUUID();
 		StringBuilder out = new StringBuilder();
@@ -335,14 +334,9 @@ public class OfxRequest
 		{
 			out.append("OFXHEADER:100\n")
 				.append("DATA:OFXSGML\n")
-				.append(String.format("VERSION:%03d\n", (int)(version * 100)));
-			if(security)
-			{
-				out.append("SECURITY:TYPE1\n");
-			} else {
-				out.append("SECURITY:NONE\n");
-			}
-			out.append("ENCODING:UTF-8\n")
+				.append(String.format("VERSION:%03d\n", (int)(version * 100)))
+				.append("SECURITY:NONE\n")
+				.append("ENCODING:UTF-8\n")
 				.append("CHARSET:NONE\n")
 				.append("COMPRESSION:NONE\n");
 			if(this.fileUid != null)
@@ -359,13 +353,8 @@ public class OfxRequest
 			out.append("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n")
 				.append("<?OFX ")
 				.append("OFXHEADER=\"200\" ")
-				.append(String.format("VERSION=\"%03d\" ", (int)(this.version * 100)));
-			if(security)
-			{
-				out.append("SECURITY=\"TYPE1\" ");
-			} else {
-				out.append("SECURITY=\"NONE\" ");
-			}
+				.append(String.format("VERSION=\"%03d\" ", (int)(this.version * 100)))
+				.append("SECURITY=\"NONE\" ");
 			if(this.fileUid != null)
 			{
 				out.append(String.format("OLDFILEUID=\"%s\" ", this.fileUid.toString()));
