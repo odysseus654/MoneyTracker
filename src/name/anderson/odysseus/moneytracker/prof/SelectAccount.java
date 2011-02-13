@@ -169,7 +169,7 @@ public class SelectAccount extends ListActivity implements Runnable
 		{
 			context = mContext;
 			acctList = accts;
-			msgsetNames = context.getResources().getStringArray(R.array.message_set);
+			msgsetNames = context.getResources().getStringArray(R.array.acct_types);
 		}
 
 		@Override
@@ -201,7 +201,9 @@ public class SelectAccount extends ListActivity implements Runnable
 				rowLayout = (RelativeLayout) convertView;
 			}
 
-			String acctType = msgsetNames[ServiceAcctName.MSG_MAP[acct.type.ordinal()].ordinal()];
+			String acctType = msgsetNames[acct.type.ordinal()];
+			if(acct.name.acctType != null) acctType = acctType + " (" + acct.name.acctType + ')';
+			if(acct.name.acctId != null) acctType = acctType + "\nAccount: " + acct.name.acctId;
 			((TextView)rowLayout.findViewById(R.id.Name)).setText(acct.desc);
 			((TextView)rowLayout.findViewById(R.id.TaskList)).setText(acctType);
 

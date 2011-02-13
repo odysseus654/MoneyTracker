@@ -66,6 +66,11 @@
 		<item>Information</item>
 		<item>Image Download</item>
 	</string-array>
+	<string-array name="acct_types">
+		<item>Bank Account</item>
+		<item>Credit Card</item>
+		<item>Loan</item>
+	</string-array>
 	<string name="login_title">Enter login information</string>
 	<string-array name="mfa_phrases">
 		<item />

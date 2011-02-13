@@ -518,7 +518,7 @@ public class ProfileTable
 			newValue.put("user_cred_2", session.userCred2);
 			newValue.put("auth_token", session.authToken);
 			newValue.put("session_key", session.sessionkey);
-			newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
+			if(session.sessionExpire != null) newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
 			newValue.put("mfa_answer_key", session.mfaAnswerKey);
 			newValue.put("session_cookie", session.sessionCookie);
 	
@@ -830,6 +830,10 @@ public class ProfileTable
 		{
 			if(acct.name != null)
 			{
+				if(acct.session == null)
+				{
+					acct.session = session;
+				}
 				if(vals.containsKey(acct.name))
 				{
 					acct.ID = vals.get(acct.name);
