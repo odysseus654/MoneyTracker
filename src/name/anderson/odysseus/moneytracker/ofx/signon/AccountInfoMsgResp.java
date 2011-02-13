@@ -1,7 +1,7 @@
 /**
  * 
  */
-package name.anderson.odysseus.moneytracker.ofx.signup;
+package name.anderson.odysseus.moneytracker.ofx.signon;
 
 import java.util.*;
 import name.anderson.odysseus.moneytracker.ofx.*;
