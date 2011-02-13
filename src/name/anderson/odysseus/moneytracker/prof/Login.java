@@ -36,6 +36,7 @@ public class Login extends Activity implements Runnable
 	CharSequence userCred1;
 	CharSequence userCred2;
 	CharSequence authToken;
+	private String sessionCookie;
 	
 	private DialogInterface.OnClickListener dismissOnOk = new DialogInterface.OnClickListener()
 	{
@@ -114,6 +115,7 @@ public class Login extends Activity implements Runnable
 			this.userCred1 = savedInstanceState.getString("userCred1");
 			this.userCred2 = savedInstanceState.getString("userCred2");
 			this.authToken = savedInstanceState.getString("authToken");
+			this.sessionCookie = savedInstanceState.getString("sessionCookie");
 			realmName = savedInstanceState.getString("realmName");
 		}
 		else if(session != null)
@@ -123,9 +125,9 @@ public class Login extends Activity implements Runnable
 			this.userCred1 = session.userCred1;
 			this.userCred2 = session.userCred2;
 			this.authToken = session.authToken;
+			this.sessionCookie = session.sessionCookie;
 //			public String sessionkey;
 //			public String mfaAnswerKey;
-//			public String sessionCookie;
 		}
 		
 		if(profile.realms != null)
@@ -309,8 +311,8 @@ public class Login extends Activity implements Runnable
 		{
 			son.clientUid = Settings.Secure.ANDROID_ID;
 		}
+		son.sessCookie = this.sessionCookie;
 		//public String accessKey;	// session: mfa response
-		//public String sessCookie;	// session: tracking
 	}
 	
 	private LoginSession buildLoginSession(SignonMsgReq son, SignonMsgResp resp)
@@ -328,6 +330,7 @@ public class Login extends Activity implements Runnable
 		req.sessionExpire = resp.tsKeyExpire;
 		req.sessionCookie = resp.sessCookie;
 		req.mfaAnswerKey = resp.accessKey;
+		req.sessionCookie = resp.sessCookie;
 		return req;
 	}
 
@@ -591,6 +594,7 @@ public class Login extends Activity implements Runnable
 		outState.putString("userCred1", this.userCred1.toString());
 		outState.putString("userCred2", this.userCred2.toString());
 		outState.putString("authToken", this.authToken.toString());
+		outState.putString("sessionCookie", this.sessionCookie);
 		if(this.realm != null) outState.putString("realmName", this.realm.name);
 	}
 }

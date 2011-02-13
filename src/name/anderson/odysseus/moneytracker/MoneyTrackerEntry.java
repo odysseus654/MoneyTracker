@@ -35,7 +35,7 @@ public class MoneyTrackerEntry extends Activity {
 
 			TransferObject obj = new TransferObject("OFX");
 			obj.put(OfxRequest.BuildMsgSet(OfxMessageReq.MessageSet.SIGNON, req.contents, 1.1f, null));
-        	Reader resp = req.submit(true, def.fiURL, obj);
+        	Reader resp = req.submit(def.fiURL, obj);
 	        String stringResponse = Utilities.convertStreamToString(resp);
 
         	String str4 = "hello";
