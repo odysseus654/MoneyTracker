@@ -19,6 +19,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 public class EnterProfile extends Activity
 {
 	private static final int SELECT_PROFILE = 1001;
+	private static final int SELECT_ACCOUNT = 1002;
 	private static final float[] OFX_VERS = { 0.0f, 1.6f, 2.1f };
 
 	private OfxFiDefinition baseDef; 
@@ -109,11 +110,24 @@ public class EnterProfile extends Activity
 		rebuildProfile();
 
 		// now chain to the verify step
-		Intent verifyProf = new Intent(EnterProfile.this, VerifyProfile.class);
+		Intent verifyProf = new Intent(this, VerifyProfile.class);
 		Bundle bdl = new Bundle();
 		this.baseDef.push(bdl);
 		verifyProf.putExtras(bdl);
 		startActivityForResult(verifyProf, SELECT_PROFILE);
+	}
+	
+	@Override
+	protected void onActivityResult (int requestCode, int resultCode, Intent data) 
+	{
+		if(requestCode == SELECT_PROFILE && resultCode == RESULT_OK)
+		{
+			// we have a profile, now select an account
+			int profileId = data.getIntExtra("prof_id", 0);
+			Intent verifyProf = new Intent(this, SelectAccount.class);
+			verifyProf.putExtra("prof_id", profileId);
+			startActivityForResult(verifyProf, SELECT_ACCOUNT);
+		}
 	}
 	
 	@Override

@@ -249,8 +249,6 @@ public class VerifyProfile extends Activity implements Runnable
 		finish();
 	}
 
-	private static final int BEGIN_LOGIN = 1234;
-	
 	void profileSelected()
 	{
 		ProfileTable db = new ProfileTable(this);
@@ -270,11 +268,10 @@ public class VerifyProfile extends Activity implements Runnable
 			db.close();
 		}
 		
-		Intent nextIntent = new Intent(this, Login.class);
-		Bundle bdl = new Bundle();
-		bdl.putInt("prof_id", profile.ID);
-		nextIntent.putExtras(bdl);
-		startActivityForResult(nextIntent, BEGIN_LOGIN);
+		Intent i = getIntent();
+		i.putExtra("prof_id", profile.ID);
+		setResult(RESULT_OK, i);
+		finish();
 	}
 
 	private static final int QH_OK = 0;
@@ -404,7 +401,7 @@ public class VerifyProfile extends Activity implements Runnable
 	{
 //		try {
 			try {
-				profile.negotiate();
+				profile.negotiate(this);
 			} catch (HttpResponseException e) {
 				sendExceptionMsg(QH_ERR_STATUS, e);
 			} catch (OfxError e) {

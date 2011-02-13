@@ -11,10 +11,9 @@ import org.xmlpull.v1.XmlPullParserException;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.*;
-import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctInfo;
-import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctName;
+import name.anderson.odysseus.moneytracker.ofx.acct.*;
 import name.anderson.odysseus.moneytracker.ofx.prof.ProfileMsgResp;
-import name.anderson.odysseus.moneytracker.ofx.signup.*;
+import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import android.app.*;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -30,32 +29,33 @@ import android.widget.*;
  */
 public class SelectAccount extends ListActivity implements Runnable
 {
+	private final static int GET_SESSION = 1010;
 	private LoginSession session;
 	ProgressDialog prog;
 	private Thread queryThread;
+	private int profileId;
 	private List<ServiceAcctInfo> accountList;
-	private final static int GET_SESSION = 1010;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.login);
 
 		Bundle parms = getIntent().getExtras();
 		int sessionId = parms.getInt("sess_id");
-		
-		if(sessionId == 0)
-		{
-			loginFailure();
-		}
+		profileId = parms.getInt("prof_id");
 		
 		if(savedInstanceState != null)
 		{
 			sessionId = savedInstanceState.getInt("sess_id");
 		}
 		
-		loadContext(sessionId);
+		if(sessionId == 0)
+		{
+			loginFailure();
+		} else {
+			loadContext(sessionId);
+		}
 	}
 		
 	@Override
@@ -68,6 +68,8 @@ public class SelectAccount extends ListActivity implements Runnable
 	void loginFailure()
 	{
 		Intent loginProf = new Intent(this, Login.class);
+		loginProf.putExtra("prof_id", profileId);
+		if(this.session != null) loginProf.putExtra("sess_id", this.session.ID);
 		startActivityForResult(loginProf, GET_SESSION);
 	}
 	
@@ -79,7 +81,6 @@ public class SelectAccount extends ListActivity implements Runnable
 			if(resultCode == RESULT_CANCELED)
 			{
 				cancel();
-				return;
 			} else {
 				int sessionId = data.getIntExtra("sess_id", 0);
 				loadContext(sessionId);
@@ -119,13 +120,6 @@ public class SelectAccount extends ListActivity implements Runnable
 				dlg.show();
 				return;
 			}
-			
-	//		if(savedInstanceState != null)
-	//		{
-	//		}
-	//		else if(session != null)
-	//		{
-	//		}
 			
 			try
 			{
@@ -372,7 +366,7 @@ public class SelectAccount extends ListActivity implements Runnable
 
     	List<OfxMessageResp> response;
         try {
-			response = req.submit();
+			response = req.submit(this);
 
 	    	for(OfxMessageResp resp : response)
 	    	{

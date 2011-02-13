@@ -17,6 +17,7 @@ public class SelectProfile extends ListActivity implements Runnable
 	private static final String[] LIST_COL = { "name" };
 	private static final int[] LIST_IDS = { android.R.id.text1 };
 	private static final int SELECT_PROFILE = 1001;
+	private static final int SELECT_ACCOUNT = 1002;
 	private OfxFiDefTable db;
 	private String filterText;
 	ProgressDialog prog;
@@ -97,6 +98,19 @@ public class SelectProfile extends ListActivity implements Runnable
 			def.push(bdl);
 			verifyProf.putExtras(bdl);
 			startActivityForResult(verifyProf, SELECT_PROFILE);
+		}
+	}
+
+	@Override
+	protected void onActivityResult (int requestCode, int resultCode, Intent data) 
+	{
+		if(requestCode == SELECT_PROFILE && resultCode == RESULT_OK)
+		{
+			// we have a profile, now select an account
+			int profileId = data.getIntExtra("prof_id", 0);
+			Intent verifyProf = new Intent(this, SelectAccount.class);
+			verifyProf.putExtra("prof_id", profileId);
+			startActivityForResult(verifyProf, SELECT_ACCOUNT);
 		}
 	}
 
