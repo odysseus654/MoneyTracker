@@ -35,19 +35,23 @@ public class AddProfile extends ListActivity
 				switch(arg2)
 				{
 				case 0:
-					{
-						Intent browseProf = new Intent(AddProfile.this, SelectProfile.class);
-						startActivityForResult(browseProf, SELECT_PROFILE);
-						break;
-					}
+					startActivityForResult(new Intent(AddProfile.this, SelectProfile.class), SELECT_PROFILE);
+					break;
 				case 1:
-					{
-						Intent enterProf = new Intent(AddProfile.this, EnterProfile.class);
-						startActivityForResult(enterProf, SELECT_PROFILE);
-						break;
-					}
+					startActivityForResult(new Intent(AddProfile.this, EnterProfile.class), SELECT_PROFILE);
+					break;
 				}
 			}
 		});
+	}
+    
+	@Override
+	protected void onActivityResult (int requestCode, int resultCode, Intent data) 
+	{
+		if(resultCode == RESULT_OK && requestCode == SELECT_PROFILE)
+		{
+			setResult(RESULT_OK);
+			finish();
+		}
 	}
 }

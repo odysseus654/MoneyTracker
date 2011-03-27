@@ -104,13 +104,21 @@ public class SelectProfile extends ListActivity implements Runnable
 	@Override
 	protected void onActivityResult (int requestCode, int resultCode, Intent data) 
 	{
-		if(requestCode == SELECT_PROFILE && resultCode == RESULT_OK)
+		if(resultCode == RESULT_OK)
 		{
-			// we have a profile, now select an account
-			int profileId = data.getIntExtra("prof_id", 0);
-			Intent verifyProf = new Intent(this, SelectAccount.class);
-			verifyProf.putExtra("prof_id", profileId);
-			startActivityForResult(verifyProf, SELECT_ACCOUNT);
+			if(requestCode == SELECT_PROFILE)
+			{
+				// we have a profile, now select an account
+				int profileId = data.getIntExtra("prof_id", 0);
+				Intent verifyProf = new Intent(this, SelectAccount.class);
+				verifyProf.putExtra("prof_id", profileId);
+				startActivityForResult(verifyProf, SELECT_ACCOUNT);
+			}
+			else if(requestCode == SELECT_ACCOUNT)
+			{
+				setResult(RESULT_OK);
+				finish();
+			}
 		}
 	}
 

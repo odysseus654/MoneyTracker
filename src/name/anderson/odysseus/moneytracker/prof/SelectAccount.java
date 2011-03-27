@@ -8,15 +8,14 @@ import java.util.List;
 import javax.net.ssl.*;
 import org.apache.http.client.*;
 import org.xmlpull.v1.XmlPullParserException;
+import name.anderson.odysseus.moneytracker.acct.*;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.*;
 import name.anderson.odysseus.moneytracker.ofx.acct.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import android.app.*;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.*;
 import android.database.sqlite.SQLiteException;
 import android.os.*;
 import android.view.*;
@@ -236,15 +235,42 @@ public class SelectAccount extends ListActivity implements Runnable
 		finish();
 	}
 	
-	void acctSelected(ServiceAcctInfo acct)
+	void acctSelected(ServiceAcctInfo info)
 	{
+		Account acct = new Account();
+		acct.name = info.desc;
+		acct.service = info;
+		
 		DialogInterface.OnClickListener emptyClickListener = new DialogInterface.OnClickListener()
 		{
 			public void onClick(DialogInterface dialog, int which) { }
 		};
-		AlertDialog dlg = Utilities.buildAlert(SelectAccount.this, null, "Nothing more to do", "Login Error", emptyClickListener);
-		dlg.show();
-		int _i = 0;
+
+		AcctTables db = new AcctTables(this);
+		try
+		{
+			db.open();
+			
+			try
+			{
+				db.pushAccount(acct);
+			}
+			catch(SQLiteException e)
+			{
+				AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to add account", "Internal Error", emptyClickListener);
+				dlg.show();
+				return;
+			}
+		}
+		finally
+		{
+			db.close();
+		}
+
+		Intent i = getIntent();
+		i.putExtra("acct_id", acct.ID);
+		setResult(RESULT_OK, i);
+		finish();
 	}
 
 	private static final int QH_OK = 0;
