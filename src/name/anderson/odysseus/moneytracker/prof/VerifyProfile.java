@@ -254,7 +254,7 @@ public class VerifyProfile extends Activity implements Runnable
 		ProfileTable db = new ProfileTable(this);
 		try
 		{
-			db.open();
+			db.openWritable();
 			db.pushProfile(profile);
 		}
 		catch(SQLiteException e)

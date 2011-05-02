@@ -80,7 +80,7 @@ public class Login extends Activity implements Runnable
 		LoginSession session = null;
 		try
 		{
-			db.open();
+			db.openReadable();
 			if(this.sessionId != 0)
 			{
 				session = db.getSession(this.sessionId);
@@ -559,7 +559,7 @@ public class Login extends Activity implements Runnable
 	    		ProfileTable db = new ProfileTable(this);
 	    		try
 	    		{
-	    			db.open();
+	    			db.openWritable();
 		    		db.pushSession(session);
 		    		this.sessionId = session.ID;
 	    		}

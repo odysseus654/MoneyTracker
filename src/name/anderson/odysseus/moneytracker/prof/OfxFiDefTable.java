@@ -69,15 +69,15 @@ public class OfxFiDefTable
 		db.close();
 	}
 	
-	public void open() throws SQLiteException
+	public void openReadable() throws SQLiteException
 	{
-		try {
-			db = dbhelper.getWritableDatabase();
-		}
-		catch(SQLiteException ex)
-		{
-			db = dbhelper.getReadableDatabase();
-		}
+		db = dbhelper.getReadableDatabase();
+//		dbhelper.wipeTable(db);
+	}
+
+	public void openWritable() throws SQLiteException
+	{
+		db = dbhelper.getWritableDatabase();
 //		dbhelper.wipeTable(db);
 	}
 

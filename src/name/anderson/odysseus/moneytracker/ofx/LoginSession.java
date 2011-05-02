@@ -90,7 +90,7 @@ public class LoginSession
 			ProfileTable db = new ProfileTable(ctx);
 			try
 			{
-				db.open();
+				db.openWritable();
 				db.pushSession(this);
 			}
 			finally

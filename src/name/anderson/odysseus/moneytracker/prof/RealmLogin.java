@@ -103,7 +103,7 @@ public class RealmLogin extends ListActivity
 		ProfileTable db = new ProfileTable(this);
 		try
 		{
-			db.open();
+			db.openReadable();
 			profile = db.getProfile(fi_id);
 		}
 		catch(SQLiteException e)
@@ -152,12 +152,7 @@ public class RealmLogin extends ListActivity
 		}
 		
 		RealmInfo[] realmList = new RealmInfo[realmMembers.size()];
-		int idx = 0;
-		for(RealmInfo rinfo : realmMembers.values())
-		{
-			realmList[idx++] = rinfo;
-		}
-		return realmList;
+		return realmMembers.values().toArray(realmList);
 	}
 	
 	private void buildView()

@@ -37,7 +37,11 @@ public class SelectProfile extends ListActivity implements Runnable
 		
 		try
 		{
-			db.open();
+			db.openReadable();
+			if(db.requiresUpdate())
+			{
+				db.openWritable();
+			}
 		}
 		catch(SQLiteException e)
 		{

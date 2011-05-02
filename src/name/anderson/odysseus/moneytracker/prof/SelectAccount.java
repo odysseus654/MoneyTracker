@@ -99,7 +99,7 @@ public class SelectAccount extends ListActivity implements Runnable
 		ProfileTable db = new ProfileTable(this);
 		try
 		{
-			db.open();
+			db.openReadable();
 			
 			try
 			{
@@ -249,7 +249,7 @@ public class SelectAccount extends ListActivity implements Runnable
 		AcctTables db = new AcctTables(this);
 		try
 		{
-			db.open();
+			db.openWritable();
 			
 			try
 			{
@@ -439,7 +439,7 @@ public class SelectAccount extends ListActivity implements Runnable
 		ProfileTable db = new ProfileTable(this);
 		try
 		{
-			db.open();
+			db.openWritable();
 			db.syncAccounts(session, accountList);
 		}
 		catch(SQLiteException e) {
