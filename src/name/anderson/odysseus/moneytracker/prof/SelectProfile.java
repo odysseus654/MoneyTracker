@@ -120,7 +120,10 @@ public class SelectProfile extends ListActivity implements Runnable
 			}
 			else if(requestCode == SELECT_ACCOUNT)
 			{
-				setResult(RESULT_OK);
+				int acctId = data.getIntExtra("acct_id", 0);
+				Intent i = getIntent();
+				i.putExtra("acct_id", acctId);
+				setResult(RESULT_OK, i);
 				finish();
 			}
 		}

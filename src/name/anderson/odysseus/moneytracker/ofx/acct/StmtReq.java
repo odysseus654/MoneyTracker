@@ -7,11 +7,11 @@ public class StmtReq extends OfxMessageReq
 {
 	public ServiceAcctName name;
 	public boolean includeTrans;
-	public boolean includeImage;
+	//public boolean includeImage;
 	public Date startDt;
 	public Date endDt;
 	
-	public StmtReq(MessageSet ms, String n)
+	public StmtReq()
 	{
 		super(MessageSet.BANK, "STMT");
 	}
@@ -35,7 +35,7 @@ public class StmtReq extends OfxMessageReq
 			obj.put(incTrans);
 		}
 		
-		if(this.includeImage) obj.put("INCTRANIMG", true);
+		//if(this.includeImage) obj.put("INCTRANIMG", true);
 	}
 
 	@Override

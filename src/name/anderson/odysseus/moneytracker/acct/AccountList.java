@@ -4,6 +4,7 @@
 package name.anderson.odysseus.moneytracker.acct;
 
 import java.util.*;
+
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.prof.AddProfile;
@@ -23,7 +24,6 @@ import android.widget.*;
 public class AccountList extends ListActivity 
 {
 	private static final int ADD_ACCOUNT = 2001;
-//	private static final int[] LIST_IDS = { };
 
 	private AcctTables db;
 
@@ -108,8 +108,8 @@ public class AccountList extends ListActivity
 			}
 
 			((TextView)rowLayout.findViewById(R.id.Name)).setText(rinfo.name);
-//			((TextView)rowLayout.findViewById(R.id.CurBal)).setText(members);
-//			((TextView)rowLayout.findViewById(R.id.AvailBal)).setText(members);
+			((TextView)rowLayout.findViewById(R.id.CurBal)).setText(Double.toString(rinfo.curBalAmt));
+			((TextView)rowLayout.findViewById(R.id.AvailBal)).setText(Double.toString(rinfo.availBalAmt));
 
 			return rowLayout;
 		}

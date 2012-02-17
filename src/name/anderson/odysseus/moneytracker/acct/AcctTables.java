@@ -14,6 +14,8 @@ import android.database.sqlite.*;
 import android.database.sqlite.SQLiteDatabase.CursorFactory;
 import java.util.*;
 
+import name.anderson.odysseus.moneytracker.ofx.acct.ServiceAcctInfo;
+
 /**
  * @author Erik
  *
@@ -26,7 +28,9 @@ public class AcctTables
 	
 	private static final String DATABASE_NAME = "account.db";
 	private static final int DATABASE_VERSION = 1;
-	
+
+	private static final String[] ID_COLS = { "_id" };
+
 	private static final String[] AC_COLS =
 	{ "_id", "service_id", "name", "last_update", "curbal_amt", "curbal_date", "availbal_amt", "availbal_date" };
 
@@ -35,14 +39,20 @@ public class AcctTables
 		private static final String[] CREATE_TABLE =
 		{
 			"CREATE TABLE acct(" +
-			"_id integer primary key autoincrement, service_id integer not null primary key, name text not null, " +
+			"_id integer primary key autoincrement, service_id integer not null unique, name text not null, " +
 			"last_update text, curbal_amt double, curbal_date text, availbal_amt double, availbal_date text " +
+			");",
+			"CREATE TABLE trans(" +
+			"_id integer primary key autoincrement, acct_id integer not null, type text not null, " +
+			"post_date text, init_date text, avail_date text, amt double, trans_id text not null, " +
+			"serv_trans_id text " +
 			");"
 		};
 
 		private static final String[] DROP_TABLE =
 		{
-			"DROP TABLE IF EXISTS acct;"
+			"DROP TABLE IF EXISTS acct;",
+			"DROP TABLE IF EXISTS trans;"
 		};
 
 		public OfxFiDefOpenHelper(Context context, String name,	CursorFactory factory, int version)
@@ -153,30 +163,34 @@ public class AcctTables
 		return acct;
 	}
 
+	private ContentValues acctValues(Account acct)
+	{
+		ContentValues newValue = new ContentValues();
+		
+		if(acct.service != null)
+		{
+			if(acct.service.ID != 0) newValue.put("acctid", acct.service.ID);
+		} else {
+			if(acct.serviceId != 0) newValue.put("acctid", acct.serviceId);
+		}
+		newValue.put("name", acct.name);
+		newValue.put("last_update", acct.lastUpdate == null ? null : Long.toString(acct.lastUpdate.getTime()));
+		newValue.put("curbal_amt", acct.curBalAmt);
+		newValue.put("curbal_date", acct.curBalDate == null ? null : Long.toString(acct.curBalDate.getTime()));
+		newValue.put("availbal_amt", acct.availBalAmt);
+		newValue.put("availbal_date", acct.availBalDate == null ? null : Long.toString(acct.availBalDate.getTime()));
+		return newValue;
+	}
+
 	private int addAccount(Account acct)
 	{
 		db.beginTransaction();
 		int acct_id;
 		try
 		{
-			ContentValues newValue = new ContentValues();
-	
-			if(acct.service != null)
-			{
-				if(acct.service.ID != 0) newValue.put("acctid", acct.service.ID);
-			} else {
-				if(acct.serviceId != 0) newValue.put("acctid", acct.serviceId);
-			}
- 			newValue.put("name", acct.name);
- 			newValue.put("last_update", acct.lastUpdate == null ? null : Long.toString(acct.lastUpdate.getTime()));
- 			newValue.put("curbal_amt", acct.curBalAmt);
- 			newValue.put("curbal_date", acct.curBalDate == null ? null : Long.toString(acct.curBalDate.getTime()));
- 			newValue.put("availbal_amt", acct.availBalAmt);
- 			newValue.put("availbal_date", acct.availBalDate == null ? null : Long.toString(acct.availBalDate.getTime()));
-
+			ContentValues newValue = acctValues(acct);
 			acct_id = (int)db.insertOrThrow("acct", "name", newValue);
 			acct.ID = acct_id;
-			
 			db.setTransactionSuccessful();
 		}
 		finally
@@ -191,24 +205,116 @@ public class AcctTables
 		db.beginTransaction();
 		try
 		{
-			ContentValues newValue = new ContentValues();
-			
-			if(acct.service != null)
-			{
-				if(acct.service.ID != 0) newValue.put("acctid", acct.service.ID);
-			} else {
-				if(acct.serviceId != 0) newValue.put("acctid", acct.serviceId);
-			}
- 			newValue.put("name", acct.name);
- 			newValue.put("last_update", acct.lastUpdate == null ? null : Long.toString(acct.lastUpdate.getTime()));
- 			newValue.put("curbal_amt", acct.curBalAmt);
- 			newValue.put("curbal_date", acct.curBalDate == null ? null : Long.toString(acct.curBalDate.getTime()));
- 			newValue.put("availbal_amt", acct.availBalAmt);
- 			newValue.put("availbal_date", acct.availBalDate == null ? null : Long.toString(acct.availBalDate.getTime()));
-
+			ContentValues newValue = acctValues(acct);
 			String[] args = { Integer.toString(acct.ID) };
 			db.update("acct", newValue, "_id=?", args);
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+	}
+
+	public void establishAccount(ServiceAcctInfo acct)
+	{
+		String[] args = { Integer.toString(acct.ID) };
+		Cursor cur = db.query("acct", AC_COLS, "service_id=?", args, null, null, null);
+		try
+		{
+			if(cur.moveToNext()) return;
+		}
+		finally
+		{
+			cur.close();
+		}
+		
+		Account newAcct = new Account();
+		newAcct.serviceId = acct.ID;
+		newAcct.name = acct.desc;
+		addAccount(newAcct);
+	}
+
+	public void deleteTran(Account acct, String transID)
+	{
+		String[] args = { Integer.toString(acct.ID), transID };
+		db.beginTransaction();
+		try
+		{
+			db.delete("trans", "acct_id=? and trans_id=?", args);
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+	}
+
+	public void pushTran(Transaction trans)
+	{
+		if(trans.ID == 0 && !tranExists(trans))
+		{
+			addTran(trans);
+		} else {
+			updateTran(trans);
+		}
+	}
+
+	private boolean tranExists(Transaction trans)
+	{
+		String[] args = { Integer.toString(trans.acct.ID), trans.transID };
+		Cursor cur = db.query("trans", ID_COLS, "acct_id=? and trans_id=?", args, null, null, null);
+		try
+		{
+			return cur.moveToNext();
+		}
+		finally
+		{
+			cur.close();
+		}
+	}
+	
+	private ContentValues tranValues(Transaction trans)
+	{
+		ContentValues newValue = new ContentValues();
+		newValue.put("acct_id", trans.acct.ID);
+		newValue.put("trans_id", trans.transID);
+		newValue.put("serv_trans_id", trans.servTransID);
+		newValue.put("type", trans.type);
+		newValue.put("amt", trans.amt);
+		newValue.put("post_date", trans.postDate == null ? null : Long.toString(trans.postDate.getTime()));
+		newValue.put("init_date", trans.initDate == null ? null : Long.toString(trans.initDate.getTime()));
+		newValue.put("avail_date", trans.availDate == null ? null : Long.toString(trans.availDate.getTime()));
+		return newValue;
+	}
+
+	private int addTran(Transaction trans)
+	{
+		db.beginTransaction();
+		int tran_id;
+		try
+		{
+			ContentValues newValue = tranValues(trans);
+			tran_id = (int)db.insertOrThrow("trans", "acct_id", newValue);
+			trans.ID = tran_id;
 			
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
+		return tran_id;
+	}
+
+	private void updateTran(Transaction trans)
+	{
+		db.beginTransaction();
+		try
+		{
+			ContentValues newValue = tranValues(trans);
+			String[] args = { Integer.toString(trans.ID) };
+			db.update("trans", newValue, "_id=?", args);
 			db.setTransactionSuccessful();
 		}
 		finally

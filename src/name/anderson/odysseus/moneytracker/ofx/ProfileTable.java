@@ -315,6 +315,47 @@ public class ProfileTable
 
 		return profile;
 	}
+	
+	private ContentValues profileValues(OfxProfile profile)
+	{
+		ContentValues newValue = new ContentValues();
+		int flags = 0;
+		if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
+		if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
+		if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
+		if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
+
+		if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
+		newValue.put("lang", profile.lang);
+		newValue.put("prof_age", profile.profAge == null ? null : Long.toString(profile.profAge.getTime()));
+		newValue.put("acct_age", profile.acctListAge == null ? null : Long.toString(profile.acctListAge.getTime()));
+
+		newValue.put("flags", flags);
+		newValue.put("name", profile.fidef.name);
+		newValue.put("url", profile.fidef.fiURL);
+		newValue.put("fi_org", profile.fidef.fiOrg);
+		newValue.put("fi_id", profile.fidef.fiID);
+		newValue.put("app_id", profile.fidef.appId);
+		newValue.put("app_ver", profile.fidef.appVer);
+		newValue.put("ofx_ver", profile.fidef.ofxVer);
+		if(profile.fidescr != null)
+		{
+			newValue.put("prof_name", profile.fidescr.FIName);
+			newValue.put("prof_addr1", profile.fidescr.Addr1);
+			newValue.put("prof_addr2", profile.fidescr.Addr2);
+			newValue.put("prof_addr3", profile.fidescr.Addr3);
+			newValue.put("prof_city", profile.fidescr.City);
+			newValue.put("prof_state", profile.fidescr.State);
+			newValue.put("prof_postal", profile.fidescr.PostalCode);
+			newValue.put("prof_country", profile.fidescr.Country);
+			newValue.put("prof_csphone", profile.fidescr.CSPhone);
+			newValue.put("prof_tsphone", profile.fidescr.TSPhone);
+			newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
+			newValue.put("prof_url", profile.fidescr.URL);
+			newValue.put("prof_email", profile.fidescr.Email);
+		}
+		return newValue;
+	}
 
 	private int addProfile(OfxProfile profile)
 	{
@@ -322,46 +363,9 @@ public class ProfileTable
 		int fi_id;
 		try
 		{
-			ContentValues newValue = new ContentValues();
-	//		newValue.put("parentid", ...);
-			int flags = 0;
-			if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
-			if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
-			if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
-			if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
-	
-			if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
-			newValue.put("lang", profile.lang);
-			newValue.put("prof_age", profile.profAge == null ? null : Long.toString(profile.profAge.getTime()));
-			newValue.put("acct_age", profile.acctListAge == null ? null : Long.toString(profile.acctListAge.getTime()));
-
-			newValue.put("flags", flags);
-			newValue.put("name", profile.fidef.name);
-			newValue.put("url", profile.fidef.fiURL);
-			newValue.put("fi_org", profile.fidef.fiOrg);
-			newValue.put("fi_id", profile.fidef.fiID);
-			newValue.put("app_id", profile.fidef.appId);
-			newValue.put("app_ver", profile.fidef.appVer);
-			newValue.put("ofx_ver", profile.fidef.ofxVer);
-			if(profile.fidescr != null)
-			{
-				newValue.put("prof_name", profile.fidescr.FIName);
-				newValue.put("prof_addr1", profile.fidescr.Addr1);
-				newValue.put("prof_addr2", profile.fidescr.Addr2);
-				newValue.put("prof_addr3", profile.fidescr.Addr3);
-				newValue.put("prof_city", profile.fidescr.City);
-				newValue.put("prof_state", profile.fidescr.State);
-				newValue.put("prof_postal", profile.fidescr.PostalCode);
-				newValue.put("prof_country", profile.fidescr.Country);
-				newValue.put("prof_csphone", profile.fidescr.CSPhone);
-				newValue.put("prof_tsphone", profile.fidescr.TSPhone);
-				newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
-				newValue.put("prof_url", profile.fidescr.URL);
-				newValue.put("prof_email", profile.fidescr.Email);
-			}
+			ContentValues newValue = profileValues(profile);
 			fi_id = (int)db.insertOrThrow("fi", "name", newValue);
 			profile.ID = fi_id;
-			
 			refreshChildData(profile);
 			db.setTransactionSuccessful();
 		}
@@ -443,46 +447,9 @@ public class ProfileTable
 		db.beginTransaction();
 		try
 		{
-			ContentValues newValue = new ContentValues();
-	//		newValue.put("parentid", ...);
-			int flags = 0;
-			if(profile.fidef.simpleProf) flags = flags | FI_SIMPLE_PROF;
-			if(profile.useExpectContinue) flags = flags | FI_USE_EXPECT_CONTINUE;
-			if(profile.ignoreEncryption) flags = flags | FI_IGNORE_ENCRYPTION;
-			if(profile.profileIsUser) flags = flags | FI_PROFILE_IS_USER;
-	
-			if(profile.parentID != 0) newValue.put("parentid", profile.parentID);
-			newValue.put("lang", profile.lang);
-			newValue.put("prof_age", profile.profAge == null ? null : Long.toString(profile.profAge.getTime()));
-			newValue.put("acct_age", profile.acctListAge == null ? null : Long.toString(profile.acctListAge.getTime()));
-			newValue.put("flags", flags);
-			newValue.put("name", profile.fidef.name);
-			newValue.put("url", profile.fidef.fiURL);
-			newValue.put("fi_org", profile.fidef.fiOrg);
-			newValue.put("fi_id", profile.fidef.fiID);
-			newValue.put("app_id", profile.fidef.appId);
-			newValue.put("app_ver", profile.fidef.appVer);
-			newValue.put("ofx_ver", profile.fidef.ofxVer);
-			if(profile.fidescr != null)
-			{
-				newValue.put("prof_name", profile.fidescr.FIName);
-				newValue.put("prof_addr1", profile.fidescr.Addr1);
-				newValue.put("prof_addr2", profile.fidescr.Addr2);
-				newValue.put("prof_addr3", profile.fidescr.Addr3);
-				newValue.put("prof_city", profile.fidescr.City);
-				newValue.put("prof_state", profile.fidescr.State);
-				newValue.put("prof_postal", profile.fidescr.PostalCode);
-				newValue.put("prof_country", profile.fidescr.Country);
-				newValue.put("prof_csphone", profile.fidescr.CSPhone);
-				newValue.put("prof_tsphone", profile.fidescr.TSPhone);
-				newValue.put("prof_faxphone", profile.fidescr.FaxPhone);
-				newValue.put("prof_url", profile.fidescr.URL);
-				newValue.put("prof_email", profile.fidescr.Email);
-			}
-	
+			ContentValues newValue = profileValues(profile);
 			String[] args = { Integer.toString(profile.ID) };
 			db.update("fi", newValue, "_id=?", args);
-			
 			refreshChildData(profile);
 			db.setTransactionSuccessful();
 		}
@@ -501,6 +468,23 @@ public class ProfileTable
 			updateSession(session);
 		}
 	}
+	
+	private ContentValues sessionValues(LoginSession session)
+	{
+		ContentValues newValue = new ContentValues();
+		newValue.put("fi", session.profile.ID);
+		if(session.realm != null) newValue.put("realm", session.realm.name);
+		newValue.put("userid", session.userid);
+		newValue.put("userpass", session.userpass);
+		newValue.put("user_cred_1", session.userCred1);
+		newValue.put("user_cred_2", session.userCred2);
+		newValue.put("auth_token", session.authToken);
+		newValue.put("session_key", session.sessionkey);
+		if(session.sessionExpire != null) newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
+		newValue.put("mfa_answer_key", session.mfaAnswerKey);
+		newValue.put("session_cookie", session.sessionCookie);
+		return newValue;
+	}
 
 	private void updateSession(LoginSession session)
 	{
@@ -508,20 +492,7 @@ public class ProfileTable
 		db.beginTransaction();
 		try
 		{
-			ContentValues newValue = new ContentValues();
-
-			newValue.put("fi", session.profile.ID);
-			if(session.realm != null) newValue.put("realm", session.realm.name);
-			newValue.put("userid", session.userid);
-			newValue.put("userpass", session.userpass);
-			newValue.put("user_cred_1", session.userCred1);
-			newValue.put("user_cred_2", session.userCred2);
-			newValue.put("auth_token", session.authToken);
-			newValue.put("session_key", session.sessionkey);
-			if(session.sessionExpire != null) newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
-			newValue.put("mfa_answer_key", session.mfaAnswerKey);
-			newValue.put("session_cookie", session.sessionCookie);
-	
+			ContentValues newValue = sessionValues(session);
 			String[] args = { Integer.toString(session.ID) };
 			db.update("session", newValue, "_id=?", args);
 			db.setTransactionSuccessful();
@@ -539,23 +510,9 @@ public class ProfileTable
 		int sess_id;
 		try
 		{
-			ContentValues newValue = new ContentValues();
-
-			newValue.put("fi", session.profile.ID);
-			if(session.realm != null) newValue.put("realm", session.realm.name);
-			newValue.put("userid", session.userid);
-			newValue.put("userpass", session.userpass);
-			newValue.put("user_cred_1", session.userCred1);
-			newValue.put("user_cred_2", session.userCred2);
-			newValue.put("auth_token", session.authToken);
-			newValue.put("session_key", session.sessionkey);
-			if(session.sessionExpire != null) newValue.put("session_expire", Long.toString(session.sessionExpire.getTime()));
-			newValue.put("mfa_answer_key", session.mfaAnswerKey);
-			newValue.put("session_cookie", session.sessionCookie);
-
+			ContentValues newValue = sessionValues(session);
 			sess_id = (int)db.insertOrThrow("session", "fi", newValue);
 			session.ID = sess_id;
-			
 			db.setTransactionSuccessful();
 		}
 		finally
@@ -642,6 +599,37 @@ public class ProfileTable
 			updateAccount(acct);
 		}
 	}
+	
+	private ContentValues accountValues(ServiceAcctInfo acct)
+	{
+		int flags = 0;
+		if(acct.detailAvail) flags = flags | AC_DETAIL_AVAIL;
+		if(acct.xferSource) flags = flags | AC_XFER_SOURCE;
+		if(acct.xferDest) flags = flags | AC_XFER_DEST;
+
+		ContentValues newValue = new ContentValues();
+		newValue.put("session", acct.session.ID);
+		newValue.put("desc", acct.desc);
+		newValue.put("flags", flags);
+		newValue.put("phone", acct.phone);
+		newValue.put("type", acct.type.toString());
+		newValue.put("status", acct.status);
+		if(acct.name != null)
+		{
+			newValue.put("bank_id", acct.name.bankId);
+			newValue.put("branch_id", acct.name.branchId);
+			newValue.put("acct_id", acct.name.acctId);
+			newValue.put("acct_type", acct.name.acctType);
+			newValue.put("acct_key", acct.name.acctKey);
+		} else {
+			newValue.putNull("bank_id");
+			newValue.putNull("branch_id");
+			newValue.putNull("acct_id");
+			newValue.putNull("acct_type");
+			newValue.putNull("acct_key");
+		}
+		return newValue;
+	}
 
 	private void updateAccount(ServiceAcctInfo acct)
 	{
@@ -649,33 +637,7 @@ public class ProfileTable
 		db.beginTransaction();
 		try
 		{
-			int flags = 0;
-			if(acct.detailAvail) flags = flags | AC_DETAIL_AVAIL;
-			if(acct.xferSource) flags = flags | AC_XFER_SOURCE;
-			if(acct.xferDest) flags = flags | AC_XFER_DEST;
-
-			ContentValues newValue = new ContentValues();
-			newValue.put("session", acct.session.ID);
-			newValue.put("desc", acct.desc);
-			newValue.put("flags", flags);
-			newValue.put("phone", acct.phone);
-			newValue.put("type", acct.type.toString());
-			newValue.put("status", acct.status);
-			if(acct.name != null)
-			{
-				newValue.put("bank_id", acct.name.bankId);
-				newValue.put("branch_id", acct.name.branchId);
-				newValue.put("acct_id", acct.name.acctId);
-				newValue.put("acct_type", acct.name.acctType);
-				newValue.put("acct_key", acct.name.acctKey);
-			} else {
-				newValue.putNull("bank_id");
-				newValue.putNull("branch_id");
-				newValue.putNull("acct_id");
-				newValue.putNull("acct_type");
-				newValue.putNull("acct_key");
-			}
-
+			ContentValues newValue = accountValues(acct);
 			String[] args = { Integer.toString(acct.ID) };
 			db.update("account", newValue, "_id=?", args);
 			db.setTransactionSuccessful();
@@ -693,37 +655,9 @@ public class ProfileTable
 		int acc_id;
 		try
 		{
-			ContentValues newValue = new ContentValues();
-
-			int flags = 0;
-			if(acct.detailAvail) flags = flags | AC_DETAIL_AVAIL;
-			if(acct.xferSource) flags = flags | AC_XFER_SOURCE;
-			if(acct.xferDest) flags = flags | AC_XFER_DEST;
-
-			newValue.put("session", acct.session.ID);
-			newValue.put("desc", acct.desc);
-			newValue.put("flags", flags);
-			newValue.put("phone", acct.phone);
-			newValue.put("type", acct.type.toString());
-			newValue.put("status", acct.status);
-			if(acct.name != null)
-			{
-				newValue.put("bank_id", acct.name.bankId);
-				newValue.put("branch_id", acct.name.branchId);
-				newValue.put("acct_id", acct.name.acctId);
-				newValue.put("acct_type", acct.name.acctType);
-				newValue.put("acct_key", acct.name.acctKey);
-			} else {
-				newValue.putNull("bank_id");
-				newValue.putNull("branch_id");
-				newValue.putNull("acct_id");
-				newValue.putNull("acct_type");
-				newValue.putNull("acct_key");
-			}
-
+			ContentValues newValue = accountValues(acct);
 			acc_id = (int)db.insertOrThrow("account", "fi", newValue);
 			acct.ID = acc_id;
-			
 			db.setTransactionSuccessful();
 		}
 		finally
@@ -848,7 +782,7 @@ public class ProfileTable
 		for(Integer delAcct : vals.values())
 		{
 			String[] args = { delAcct.toString() };
-			db.execSQL("DELETE FROM account WHERE id=?", args);
+			db.delete("account", "id=?", args);
 		}
 	}
 }

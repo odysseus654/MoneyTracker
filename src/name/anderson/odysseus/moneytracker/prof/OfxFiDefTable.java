@@ -118,8 +118,8 @@ public class OfxFiDefTable
 			cur.close();
 		}
 	}
-
-	private long addDef(OfxFiDefinition def)
+	
+	private ContentValues defValues(OfxFiDefinition def)
 	{
 		ContentValues newValue = new ContentValues();
 		newValue.put("name", def.name);
@@ -132,23 +132,39 @@ public class OfxFiDefTable
 		newValue.put("simple_prof", def.simpleProf ? 1 : 0);
 		newValue.put("src_name", def.srcName);
 		newValue.put("src_id", def.srcId);
-		return db.insertOrThrow(TABLE_NAME, null, newValue);
+		return newValue;
+	}
+
+	private long addDef(OfxFiDefinition def)
+	{
+		db.beginTransaction();
+		try
+		{
+			ContentValues newValue = defValues(def);
+			long ret = db.insertOrThrow(TABLE_NAME, null, newValue);
+			db.setTransactionSuccessful();
+			return ret;
+		}
+		finally
+		{
+			db.endTransaction();
+		}
 	}
 	
 	private void updateDefBySource(OfxFiDefinition def)
 	{
-		ContentValues newValue = new ContentValues();
-		newValue.put("name", def.name);
-		newValue.put("url", def.fiURL);
-		newValue.put("fi_org", def.fiOrg);
-		newValue.put("fi_id", def.fiID);
-		newValue.put("app_id", def.appId);
-		newValue.put("app_ver", def.appVer);
-		newValue.put("ofx_ver", def.ofxVer);
-		newValue.put("simple_prof", def.simpleProf ? 1 : 0);
-
-		String[] args = { def.srcName, def.srcId };
-		db.update(TABLE_NAME, newValue, "src_name=? and src_id=?", args);
+		db.beginTransaction();
+		try
+		{
+			ContentValues newValue = defValues(def);
+			String[] args = { def.srcName, def.srcId };
+			db.update(TABLE_NAME, newValue, "src_name=? and src_id=?", args);
+			db.setTransactionSuccessful();
+		}
+		finally
+		{
+			db.endTransaction();
+		}
 	}
 
 	public void sync(List<OfxFiDefinition> defs, String srcName, boolean doUpdates)
@@ -187,7 +203,7 @@ public class OfxFiDefTable
 		for(String delDef : vals)
 		{
 			String[] args = { srcName, delDef };
-			db.execSQL("DELETE FROM " + TABLE_NAME + " WHERE src_name=? and src_id=?", args);
+			db.delete(TABLE_NAME, "src_name=? and src_id=?", args);
 		}
 	}
 
@@ -196,9 +212,7 @@ public class OfxFiDefTable
 		Cursor c = defList(null);
 		try
 		{
-			if(!c.moveToNext()) return true;
-	
-			return false;
+			return !c.moveToNext();
 		}
 		finally
 		{
