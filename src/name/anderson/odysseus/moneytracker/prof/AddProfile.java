@@ -36,7 +36,6 @@ public class AddProfile extends ListActivity
 		lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
 		{
-			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
 			{
 				switch(arg2)

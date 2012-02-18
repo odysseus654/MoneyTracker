@@ -379,8 +379,8 @@ public class ProfileTable
 	private void refreshChildData(OfxProfile profile)
 	{
 		String[] args = { Integer.toString(profile.ID) };
-		db.execSQL("DELETE FROM endpoint WHERE fi=?;", args);
-		db.execSQL("DELETE FROM realm WHERE fi=?;", args);
+		db.delete("endpoint", "fi=?", args);
+		db.delete("realm", "fi=?", args);
 		if(profile.endpoints != null)
 		{
 			for(OfxProfile.Endpoint endpoint : profile.endpoints.values())

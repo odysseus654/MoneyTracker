@@ -396,7 +396,6 @@ public class VerifyProfile extends Activity implements Runnable
 		queryHandler.sendMessage(msg);
 	}
 
-	@Override
 	public void run()
 	{
 //		try {

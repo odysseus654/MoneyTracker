@@ -170,7 +170,6 @@ public class SelectProfile extends ListActivity implements Runnable
 			}
 			lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
 			{
-				@Override
 				public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
 				{
 					selectDefById((int)id);
@@ -245,7 +244,6 @@ public class SelectProfile extends ListActivity implements Runnable
 		}
 	};
 
-	@Override
 	public void run()
 	{
 //		try {

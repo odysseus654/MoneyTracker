@@ -171,25 +171,21 @@ public class SelectAccount extends ListActivity implements Runnable
 			msgsetNames = context.getResources().getStringArray(R.array.acct_types);
 		}
 
-		@Override
 		public int getCount()
 		{
 			return acctList.length;
 		}
 
-		@Override
 		public Object getItem(int position)
 		{
 			return acctList[position];
 		}
 
-		@Override
 		public long getItemId(int position)
 		{
 			return position;
 		}
 
-		@Override
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			RelativeLayout rowLayout;
@@ -221,7 +217,6 @@ public class SelectAccount extends ListActivity implements Runnable
 		lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
 		{
-			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
 			{
 				acctSelected(acctList[pos]);
@@ -395,7 +390,6 @@ public class SelectAccount extends ListActivity implements Runnable
 		queryHandler.sendMessage(msg);
 	}
 
-	@Override
 	public void run()
 	{
     	OfxRequest req = session.newRequest();

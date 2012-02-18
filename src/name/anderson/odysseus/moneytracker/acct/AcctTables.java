@@ -32,7 +32,7 @@ public class AcctTables
 	private static final String[] ID_COLS = { "_id" };
 
 	private static final String[] AC_COLS =
-	{ "_id", "service_id", "name", "last_update", "curbal_amt", "curbal_date", "availbal_amt", "availbal_date" };
+	{ "_id", "service_id", "name", "last_update", "curbal_amt", "curbal_date", "availbal_amt", "availbal_date", "last_trans" };
 
 	static private class OfxFiDefOpenHelper extends SQLiteOpenHelper
 	{
@@ -40,7 +40,8 @@ public class AcctTables
 		{
 			"CREATE TABLE acct(" +
 			"_id integer primary key autoincrement, service_id integer not null unique, name text not null, " +
-			"last_update text, curbal_amt double, curbal_date text, availbal_amt double, availbal_date text " +
+			"last_update text, curbal_amt double, curbal_date text, availbal_amt double, availbal_date text, " +
+			"last_trans text" +
 			");",
 			"CREATE TABLE trans(" +
 			"_id integer primary key autoincrement, acct_id integer not null, type text not null, " +
@@ -160,6 +161,8 @@ public class AcctTables
 		acct.availBalAmt = cur.getDouble(6);
 		iAge = cur.getString(7);
 		acct.availBalDate = (iAge != null) ? new Date(Long.parseLong(iAge)) : null;
+		iAge = cur.getString(8);
+		acct.lastTrans = (iAge != null) ? new Date(Long.parseLong(iAge)) : null;
 		return acct;
 	}
 
@@ -169,9 +172,9 @@ public class AcctTables
 		
 		if(acct.service != null)
 		{
-			if(acct.service.ID != 0) newValue.put("acctid", acct.service.ID);
+			if(acct.service.ID != 0) newValue.put("service_id", acct.service.ID);
 		} else {
-			if(acct.serviceId != 0) newValue.put("acctid", acct.serviceId);
+			if(acct.serviceId != 0) newValue.put("service_id", acct.serviceId);
 		}
 		newValue.put("name", acct.name);
 		newValue.put("last_update", acct.lastUpdate == null ? null : Long.toString(acct.lastUpdate.getTime()));
@@ -179,6 +182,7 @@ public class AcctTables
 		newValue.put("curbal_date", acct.curBalDate == null ? null : Long.toString(acct.curBalDate.getTime()));
 		newValue.put("availbal_amt", acct.availBalAmt);
 		newValue.put("availbal_date", acct.availBalDate == null ? null : Long.toString(acct.availBalDate.getTime()));
+		newValue.put("last_trans", acct.lastTrans == null ? null : Long.toString(acct.lastTrans.getTime()));
 		return newValue;
 	}
 

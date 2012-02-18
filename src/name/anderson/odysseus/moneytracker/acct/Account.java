@@ -14,4 +14,5 @@ public class Account
 	public Date   curBalDate;
 	public double availBalAmt;
 	public Date   availBalDate;
+	public Date   lastTrans;
 }

@@ -498,7 +498,6 @@ public class Login extends Activity implements Runnable
 		queryHandler.sendMessage(msg);
 	}
 
-	@Override
 	public void run()
 	{
 		SignonMsgReq son = buildLoginRequest();

@@ -76,7 +76,6 @@ public class ServiceAcctName implements Comparable<ServiceAcctName>
 		return 0;
 	}
 
-	@Override
 	public int compareTo(ServiceAcctName another)
 	{
 		int test = compareObj(type, another.type);

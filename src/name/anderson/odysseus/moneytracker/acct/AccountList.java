@@ -78,25 +78,21 @@ public class AccountList extends ListActivity
 			accountList = accts;
 		}
 
-		@Override
 		public int getCount()
 		{
 			return accountList.length;
 		}
 
-		@Override
 		public Object getItem(int position)
 		{
 			return accountList[position];
 		}
 
-		@Override
 		public long getItemId(int position)
 		{
 			return position;
 		}
 
-		@Override
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			RelativeLayout rowLayout;
@@ -128,7 +124,6 @@ public class AccountList extends ListActivity
 			lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 			lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
 			{
-				@Override
 				public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
 				{
 					selectAcctById(accountList[pos]);

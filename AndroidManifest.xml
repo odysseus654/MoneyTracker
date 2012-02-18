@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="name.anderson.odysseus.moneytracker" android:versionCode="1" android:versionName="1.0">
-	<application android:icon="@drawable/icon" android:label="@string/app_name">
+	<uses-sdk android:minSdkVersion="4" />
+   	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+   	<application android:icon="@drawable/icon" android:label="@string/app_name">
 		<!-- <activity android:name=".MoneyTrackerEntry" >  -->
 		<activity android:name=".prof.AddProfile" android:label="@string/add_profile_title">
 			<intent-filter>
@@ -16,8 +19,4 @@
 		<activity android:name=".prof.Login" android:label="@string/login_title" />
 		<activity android:name=".prof.SelectAccount" android:label="@string/select_acct_title" />
 	</application>
-
-	<uses-permission android:name="android.permission.INTERNET" />
-	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-	<uses-sdk android:minSdkVersion="4" />
 </manifest> 

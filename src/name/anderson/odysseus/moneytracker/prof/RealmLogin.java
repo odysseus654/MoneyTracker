@@ -43,25 +43,21 @@ public class RealmLogin extends ListActivity
 			msgsetNames = context.getResources().getStringArray(R.array.message_set);
 		}
 
-		@Override
 		public int getCount()
 		{
 			return realmList.length;
 		}
 
-		@Override
 		public Object getItem(int position)
 		{
 			return realmList[position];
 		}
 
-		@Override
 		public long getItemId(int position)
 		{
 			return position;
 		}
 
-		@Override
 		public View getView(int position, View convertView, ViewGroup parent)
 		{
 			RelativeLayout rowLayout;
@@ -165,7 +161,6 @@ public class RealmLogin extends ListActivity
 		lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 		lv.setOnItemClickListener(new AdapterView.OnItemClickListener()
 		{
-			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int pos, long id)
 			{
 				realmSelected(realmList[pos]);
