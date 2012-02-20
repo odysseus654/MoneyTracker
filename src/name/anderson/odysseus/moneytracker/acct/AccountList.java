@@ -4,7 +4,6 @@
 package name.anderson.odysseus.moneytracker.acct;
 
 import java.util.*;
-
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.prof.AddProfile;
@@ -32,7 +31,7 @@ public class AccountList extends ListActivity
 	{
 		super.onCreate(savedInstanceState);
 
-		AcctTables db = new AcctTables(this);
+		db = new AcctTables(this);
 		try
 		{
 			db.openReadable();
@@ -149,6 +148,7 @@ public class AccountList extends ListActivity
 		for(;;)
 		{
 			Account acct = db.getAccountFromCursor(cur);
+			acctList.add(acct);
 			if(!cur.moveToNext()) break;
 		}
 		

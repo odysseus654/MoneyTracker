@@ -10,6 +10,7 @@
 		<item>Search a list of providers</item>
 		<item>Manually enter a provider</item>
 	</string-array>
+	<string name="account_list_title">Account List</string>
 	<string name="enter_profile_title">Enter Institution Information</string>
 	<string name="enter_profile_name">Name of this institution:</string>
 	<string name="enter_profile_help">You can often get the following information from your institution by calling their customer service number and asking how to login to their OFX or \&quot;Quicken\&quot; service.</string>
