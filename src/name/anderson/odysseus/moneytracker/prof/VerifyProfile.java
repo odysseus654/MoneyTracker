@@ -1,6 +1,7 @@
 package name.anderson.odysseus.moneytracker.prof;
 
 import android.app.*;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteException;
@@ -14,6 +15,9 @@ import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.Date;
 import javax.net.ssl.*;
+
+import name.anderson.odysseus.moneytracker.DisconDialog;
+import name.anderson.odysseus.moneytracker.DisconProgress;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.ofx.*;
@@ -21,37 +25,77 @@ import name.anderson.odysseus.moneytracker.ofx.*;
 import org.apache.http.client.*;
 import org.xmlpull.v1.XmlPullParserException;
 
+import com.github.ignition.core.tasks.IgnitedAsyncTask;
+
 /**
  * @author Erik
  *
  */
-public class VerifyProfile extends Activity implements Runnable
+public class VerifyProfile extends Activity
 {
-	ProgressDialog prog;
-	private Thread queryThread;
+	private NegotiateTask queryTask;
 	OfxProfile profile;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
-		OfxFiDefinition fidef = new OfxFiDefinition(getIntent().getExtras());
 		
-		// build this definition into a profile
-		this.profile = new OfxProfile(fidef);
-		if(savedInstanceState != null)
+        // try to obtain a reference to a task piped through from the previous
+        // activity instance
+		Object passthrough = getLastNonConfigurationInstance();
+		if(passthrough == null)
 		{
-			if(savedInstanceState.containsKey("ofxVer")) this.profile.fidef.ofxVer = savedInstanceState.getFloat("ofxVer");
-			if(savedInstanceState.containsKey("appId")) this.profile.fidef.appId = savedInstanceState.getString("appId");
-			if(savedInstanceState.containsKey("appVer")) this.profile.fidef.appVer = savedInstanceState.getInt("appVer");
-			if(savedInstanceState.containsKey("useExpectContinue")) this.profile.useExpectContinue = savedInstanceState.getBoolean("useExpectContinue");
-			if(savedInstanceState.containsKey("prof_id")) this.profile.ID = savedInstanceState.getInt("prof_id");
+			OfxFiDefinition fidef = new OfxFiDefinition(getIntent().getExtras());
+			
+			// build this definition into a profile
+			this.profile = new OfxProfile(fidef);
+			if(savedInstanceState != null)
+			{
+				if(savedInstanceState.containsKey("ofxVer")) this.profile.fidef.ofxVer = savedInstanceState.getFloat("ofxVer");
+				if(savedInstanceState.containsKey("appId")) this.profile.fidef.appId = savedInstanceState.getString("appId");
+				if(savedInstanceState.containsKey("appVer")) this.profile.fidef.appVer = savedInstanceState.getInt("appVer");
+				if(savedInstanceState.containsKey("useExpectContinue")) this.profile.useExpectContinue = savedInstanceState.getBoolean("useExpectContinue");
+				if(savedInstanceState.containsKey("prof_id")) this.profile.ID = savedInstanceState.getInt("prof_id");
+			}
+			beginNegotiation();
 		}
-		
-		beginNegotiation();
+		else if(passthrough instanceof NegotiateTask)
+		{
+			queryTask = (NegotiateTask)passthrough;
+			queryTask.connect(this);
+		}
+		else
+		{
+			profile = (OfxProfile)passthrough;
+			buildView();
+		}
 	}
 	
-	@Override
+    @Override
+    public Object onRetainNonConfigurationInstance()
+    {
+        // we leverage this method to "tunnel" the task object through to the next
+        // incarnation of this activity in case of a configuration change
+    	if(queryTask != null)
+    	{
+    		return queryTask;
+    	} else {
+    		return profile;
+    	}
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+
+        // always disconnect the activity from the task here, in order to not risk
+        // leaking a context reference
+        queryTask.disconnect();
+    }
+
+    @Override
 	protected void onSaveInstanceState(Bundle outState)
 	{
 		super.onSaveInstanceState(outState);
@@ -67,18 +111,8 @@ public class VerifyProfile extends Activity implements Runnable
 	
 	void beginNegotiation()
 	{
-		prog = ProgressDialog.show(this, null, getString(R.string.negotiate_progress),
-				false, true, new DialogInterface.OnCancelListener()
-		{
-			public void onCancel(DialogInterface dialog)
-			{
-				cancel();
-			}
-		});
-		
-		queryThread = new Thread(this, "Negotiate Thread");
-		queryThread.setDaemon(true);
-		queryThread.start();
+		queryTask = new NegotiateTask(this);
+		queryTask.execute(profile);
 	}
 	
 	private static class ParsedPrincipal
@@ -274,36 +308,91 @@ public class VerifyProfile extends Activity implements Runnable
 		finish();
 	}
 
-	private static final int QH_OK = 0;
-	private static final int QH_ERR_STATUS = 1;
-	private static final int QH_ERR_HTTP = 2;
-	private static final int QH_ERR = 3;
-	private static final int QH_ERR_TIMEOUT = 4;
-	private static final int QH_ERR_CONN = 5;
-	private static final int QH_ERR_SSL = 6;
-	private static final int QH_ERR_SSL_VERIFY = 7;
-	private static final int QH_ERR_OFX = 8;
-	private static final int QH_ERR_PARSE = 9;
-	
-	private Handler queryHandler = new Handler()
+	private static class NegotiateTask
+		extends IgnitedAsyncTask<VerifyProfile, OfxProfile, Integer, Integer>
 	{
+		private OfxProfile profile;
+		private DisconProgress prog;
+		
+		public NegotiateTask(VerifyProfile context)
+		{
+			super(context);
+		}
+		
+		@Override
+		public void connect(VerifyProfile context)
+		{
+			super.connect(context);
+			if(prog != null) prog.connect(context);
+			context.profile = profile;
+		}
+
+		@Override
+	    public void disconnect()
+		{
+			super.disconnect();
+			if(prog != null) prog.disconnect();
+	    }
+	    
+    	static protected class ProgCancelListener implements DisconDialog.OnCancelListener
+		{
+			public void onCancel(Context ctx, DialogInterface dialog)
+			{
+				if(ctx != null) ((VerifyProfile)ctx).cancel();
+			}
+		}
+
+    	@Override
+	    protected void onStart(VerifyProfile context)
+	    {
+	    	prog = new DisconProgress(context);
+	    	prog.setMessage(R.string.negotiate_progress);
+	    	prog.setIndeterminate(false);
+	    	prog.setCancelable(true);
+	    	prog.setOnCancelListener(new ProgCancelListener());
+	    	prog.show();
+	    }
+
+	    @Override
+		public Integer run(OfxProfile... parm) throws Exception
+		{
+			profile = parm[0];
+			profile.negotiate(getContext());
+			return 0;
+		}
+
+        @Override
+        protected void onCompleted(VerifyProfile context, Integer result)
+        {
+			prog.hide();
+        }
+
+        @Override
+        protected void onSuccess(VerifyProfile context, Integer result)
+        {
+			context.buildView();
+			context.queryTask = null;
+			disconnect();
+        }
+
 		private DialogInterface.OnClickListener cancelOnClick = new DialogInterface.OnClickListener()
 		{
 			public void onClick(DialogInterface dialog, int which)
 			{
-				cancel();
+				VerifyProfile context = NegotiateTask.this.getContext();
+				if(context != null) context.cancel();
 			}
 		};
 
-		private void doAlert(Exception e, String msg)
+		private void doAlert(VerifyProfile context, Exception e, String msg)
 		{
-			AlertDialog dlg = Utilities.buildAlert(VerifyProfile.this, e, msg, "Negotiation Error", cancelOnClick);
+			AlertDialog dlg = Utilities.buildAlert(context, e, msg, "Negotiation Error", cancelOnClick);
 			dlg.show();
 		}
 
-		private void doRetryableAlert(Exception e, String msg)
+		private void doRetryableAlert(final VerifyProfile context, Exception e, String msg)
 		{
-			AlertDialog.Builder dialog = new AlertDialog.Builder(VerifyProfile.this);
+			AlertDialog.Builder dialog = new AlertDialog.Builder(context);
 			dialog.setTitle(msg);
 			String dispMsg = msg + "\n\n" + e.getMessage();
 			dialog.setMessage(dispMsg);
@@ -311,7 +400,7 @@ public class VerifyProfile extends Activity implements Runnable
 			{
 				public void onClick(DialogInterface dialog, int which)
 				{
-					beginNegotiation();
+					context.beginNegotiation();
 				}
 			});
 			dialog.setNegativeButton("Cancel", cancelOnClick);
@@ -320,111 +409,54 @@ public class VerifyProfile extends Activity implements Runnable
 			dlg.show();
 		}
 
-		public void handleMessage(Message msg)
+		@Override
+        protected void onError(VerifyProfile context, Exception error)
 		{
-			super.handleMessage(msg);
-
-			try
+			if(error instanceof HttpResponseException)
 			{
-				prog.dismiss();
-			}
-			catch(IllegalArgumentException e)
-			{	// this may happen due to race conditions on activity shutdown?
-				e.printStackTrace();
-			}
-			if(msg.obj == null)
-			{
-				buildView();
-			}
-			else
-			{
-				switch(msg.what)
+				HttpResponseException e = (HttpResponseException)error;
+				switch(e.getStatusCode())
 				{
-				case QH_ERR_STATUS:
-					{
-						HttpResponseException e = (HttpResponseException)msg.obj;
-						switch(e.getStatusCode())
-						{
-						case 200:
-							doAlert(e, "Got a strange response from the server (maybe the location points to a webpage?)");
-							break;
-						case 400:
-							doAlert(e, "Server rejected all attempts to negotiate (limitation of this program?)");
-							break;
-						default:
-							doAlert(e, "Got a strange response from the server (maybe the location has been removed?)");
-							break;
-						}
-						break;
-					}
-					
-				case QH_ERR_OFX:
-					{
-						OfxError e = (OfxError)msg.obj;
-			        	switch(e.getErrorCode())
-			        	{
-			        	case StatusResponse.STATUS_FI_INVALID: // <FI> Missing or Invalid in <SONRQ> (ERROR)
-							doAlert(e, "Server is rejecting connection details (FI_ID or FI_ORG)");
-							break;
-			        	default:
-							doAlert(e, "Got a strange response from the server");
-							break;
-			        	}
-					}
-					
-				case QH_ERR_HTTP:
-				case QH_ERR_TIMEOUT:
-				case QH_ERR_CONN:
-				case QH_ERR_SSL:
-					doRetryableAlert((Exception)msg.obj, "Unable to connect to server");
+				case 200:
+					doAlert(context, e, "Got a strange response from the server (maybe the location points to a webpage?)");
 					break;
-
+				case 400:
+					doAlert(context, e, "Server rejected all attempts to negotiate (limitation of this program?)");
+					break;
 				default:
-					doAlert((Exception)msg.obj, OfxProfile.exceptionComment((Exception)msg.obj));
+					doAlert(context, e, "Got a strange response from the server (maybe the location has been removed?)");
 					break;
 				}
 			}
-		}
-	};
-	
-	private void sendExceptionMsg(int what, Exception e)
-	{
-		e.printStackTrace();
-		Message msg = Message.obtain();
-		msg.obj = e;
-		msg.what = what;
-		queryHandler.sendMessage(msg);
-	}
-
-	public void run()
-	{
-//		try {
-			try {
-				profile.negotiate(this);
-			} catch (HttpResponseException e) {
-				sendExceptionMsg(QH_ERR_STATUS, e);
-			} catch (OfxError e) {
-				sendExceptionMsg(QH_ERR_OFX, e);
-			} catch (XmlPullParserException e) {
-				sendExceptionMsg(QH_ERR_PARSE, e);
-			} catch (SSLPeerUnverifiedException e) {
-				sendExceptionMsg(QH_ERR_SSL_VERIFY, e);
-			} catch (ClientProtocolException e) {
-				sendExceptionMsg(QH_ERR_HTTP, e);
-			} catch (ConnectException e) {
-				sendExceptionMsg(QH_ERR_TIMEOUT, e);
-			} catch (SocketException e) {
-				sendExceptionMsg(QH_ERR_CONN, e);
-			} catch (SSLException e) {
-				sendExceptionMsg(QH_ERR_SSL, e);
-			} catch (Exception e) {
-				sendExceptionMsg(QH_ERR, e);
+			else if(error instanceof OfxError)
+			{
+				OfxError e = (OfxError)error;
+	        	switch(e.getErrorCode())
+	        	{
+	        	case StatusResponse.STATUS_FI_INVALID: // <FI> Missing or Invalid in <SONRQ> (ERROR)
+					doAlert(context, e, "Server is rejecting connection details (FI_ID or FI_ORG)");
+					break;
+	        	default:
+					doAlert(context, e, "Got a strange response from the server");
+					break;
+	        	}
 			}
-			queryHandler.sendEmptyMessage(QH_OK);
-//		} catch (Throwable e) {
-//			// last chance handler
-//			e.printStackTrace();
-//			//throw(e);
-//		}
+			else if(error instanceof XmlPullParserException
+					|| error instanceof SSLPeerUnverifiedException)
+			{
+				doAlert(context, error, OfxProfile.exceptionComment(error));
+			}
+			else if(error instanceof ClientProtocolException
+					|| error instanceof ConnectException
+					|| error instanceof SocketException
+					|| error instanceof SSLException)
+			{
+				doRetryableAlert(context, error, "Unable to connect to server");
+			}
+			else
+			{
+				doAlert(context, error, OfxProfile.exceptionComment(error));
+			}
+        }
 	}
 }

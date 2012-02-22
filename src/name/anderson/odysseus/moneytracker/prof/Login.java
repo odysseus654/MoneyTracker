@@ -5,12 +5,16 @@ import java.util.List;
 import javax.net.ssl.*;
 import org.apache.http.client.*;
 import org.xmlpull.v1.XmlPullParserException;
+import com.github.ignition.core.tasks.IgnitedAsyncTask;
+import name.anderson.odysseus.moneytracker.DisconDialog;
+import name.anderson.odysseus.moneytracker.DisconProgress;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import name.anderson.odysseus.moneytracker.ofx.*;
 import name.anderson.odysseus.moneytracker.ofx.prof.*;
 import name.anderson.odysseus.moneytracker.ofx.signon.*;
 import android.app.*;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteException;
@@ -19,10 +23,9 @@ import android.provider.Settings;
 import android.view.*;
 import android.widget.*;
 
-public class Login extends Activity implements Runnable
+public class Login extends Activity
 {
-	ProgressDialog prog;
-	private Thread queryThread;
+	private LoginTask loginTask;
 	private OfxProfile profile;
 	private SignonRealm realm;
 	//private SignonMsgReq lastAttempt;
@@ -76,39 +79,49 @@ public class Login extends Activity implements Runnable
 			realmName = savedInstanceState.getString("login_realm");
 		}
 		
-		ProfileTable db = new ProfileTable(this);
+		Object passthrough = getLastNonConfigurationInstance();
+		if(passthrough != null)
+		{
+			loginTask = (LoginTask)passthrough;
+			loginTask.connect(this);
+		}
+
 		LoginSession session = null;
-		try
-		{
-			db.openReadable();
-			if(this.sessionId != 0)
-			{
-				session = db.getSession(this.sessionId);
-				profile = session.profile;
-			} else {
-				profile = db.getProfile(fi_id);
-			}
-		}
-		catch(SQLiteException e)
-		{
-			AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to retrieve profile", "Internal Error", dismissOnOk);
-			dlg.show();
-			return;
-		}
-		finally
-		{
-			db.close();
-		}
 		if(profile == null)
 		{
-			AlertDialog dlg = Utilities.buildAlert(this, null, "Could not find profile", "Internal Error", dismissOnOk);
-			dlg.show();
-			return;
+			ProfileTable db = new ProfileTable(this);
+			try
+			{
+				db.openReadable();
+				if(this.sessionId != 0)
+				{
+					session = db.getSession(this.sessionId);
+					profile = session.profile;
+				} else {
+					profile = db.getProfile(fi_id);
+				}
+			}
+			catch(SQLiteException e)
+			{
+				AlertDialog dlg = Utilities.buildAlert(this, e, "Unable to retrieve profile", "Internal Error", dismissOnOk);
+				dlg.show();
+				return;
+			}
+			finally
+			{
+				db.close();
+			}
+			if(profile == null)
+			{
+				AlertDialog dlg = Utilities.buildAlert(this, null, "Could not find profile", "Internal Error", dismissOnOk);
+				dlg.show();
+				return;
+			}
 		}
 		
 		if(savedInstanceState != null)
 		{
-			this.sessionId = savedInstanceState.getInt("sessionId");
+			if(this.sessionId == 0) this.sessionId = savedInstanceState.getInt("sessionId");
 			this.requireAuthToken = savedInstanceState.getBoolean("requireAuthToken");
 			this.userid = savedInstanceState.getString("userid");
 			this.userpass = savedInstanceState.getString("userpass");
@@ -130,7 +143,7 @@ public class Login extends Activity implements Runnable
 //			public String mfaAnswerKey;
 		}
 		
-		if(profile.realms != null)
+		if(this.realm == null && profile.realms != null)
 		{
 			if(realmName != null && profile.realms.containsKey(realmName))
 			{
@@ -178,6 +191,21 @@ public class Login extends Activity implements Runnable
 		}
 	}
 	
+	@Override
+	protected void onSaveInstanceState(Bundle outState)
+	{
+		super.onSaveInstanceState(outState);
+		outState.putInt("sessionId", this.sessionId);
+		outState.putBoolean("requireAuthToken", this.requireAuthToken);
+		outState.putString("userid", this.userid.toString());
+		outState.putString("userpass", this.userpass.toString());
+		outState.putString("userCred1", this.userCred1.toString());
+		outState.putString("userCred2", this.userCred2.toString());
+		outState.putString("authToken", this.authToken.toString());
+		outState.putString("sessionCookie", this.sessionCookie);
+		if(this.realm != null) outState.putString("realmName", this.realm.name);
+	}
+
 	private void buildView()
 	{
 		EditText edit = (EditText)findViewById(R.id.UserEdit);
@@ -287,6 +315,24 @@ public class Login extends Activity implements Runnable
 		});
 	}
 
+	@Override
+	public Object onRetainNonConfigurationInstance()
+	{
+		// we leverage this method to "tunnel" the task object through to the next
+		// incarnation of this activity in case of a configuration change
+		return loginTask;
+	}
+
+	@Override
+	protected void onDestroy()
+	{
+		super.onDestroy();
+		
+		// always disconnect the activity from the task here, in order to not risk
+		// leaking a context reference
+		loginTask.disconnect();
+	}
+
 	void cancel()
 	{
 		setResult(RESULT_CANCELED);
@@ -315,39 +361,12 @@ public class Login extends Activity implements Runnable
 		//public String accessKey;	// session: mfa response
 	}
 	
-	private LoginSession buildLoginSession(SignonMsgReq son, SignonMsgResp resp)
-	{
-		LoginSession req = new LoginSession();
-		req.profile = this.profile;
-		req.realm = this.realm;
-		req.userid = son.userid;
-		req.userpass = son.userpass;
-		req.userCred1 = son.userCred1;
-		req.userCred2 = son.userCred2;
-		req.authToken = son.authToken;
-		req.ID = this.sessionId;
-		req.sessionkey = resp.userKey;
-		req.sessionExpire = resp.tsKeyExpire;
-		req.sessionCookie = resp.sessCookie;
-		req.mfaAnswerKey = resp.accessKey;
-		req.sessionCookie = resp.sessCookie;
-		return req;
-	}
-
 	private void attemptLogin()
 	{
-		prog = ProgressDialog.show(this, null, getString(R.string.login_progress),
-				false, true, new DialogInterface.OnCancelListener()
-		{
-			public void onCancel(DialogInterface dialog)
-			{
-				cancel();
-			}
-		});
-		
-		queryThread = new Thread(this, "Login Thread");
-		queryThread.setDaemon(true);
-		queryThread.start();
+		loginTask = new LoginTask(this);
+		SignonMsgReq son = buildLoginRequest();
+		completeLoginRequest(son);
+		loginTask.execute(son);
 	}
 	
 	private void loginSuccessful()
@@ -362,35 +381,142 @@ public class Login extends Activity implements Runnable
 	public String accessKey;	// session: mfa response
 	public String sessCookie;	// session: tracking
 	public List<MfaChallenge> mfaChallenges;
-*/
-	private static final int QH_OK = 0;
-	private static final int QH_ERR_STATUS = 1;
-	private static final int QH_ERR_HTTP = 2;
-	private static final int QH_ERR = 3;
-	private static final int QH_ERR_TIMEOUT = 4;
-	private static final int QH_ERR_CONN = 5;
-	private static final int QH_ERR_SSL = 6;
-	private static final int QH_ERR_SSL_VERIFY = 7;
-	private static final int QH_ERR_OFX = 8;
-	private static final int QH_ERR_PARSE = 9;
-	private static final int QH_EMPTY = 10;
-	
-	private Handler queryHandler = new Handler()
+*/	
+	private static class LoginTask
+		extends IgnitedAsyncTask<Login, SignonMsgReq, Integer, Integer>
 	{
-		private DialogInterface.OnClickListener emptyClickListener = new DialogInterface.OnClickListener()
+		private OfxProfile profile;
+		private SignonRealm realm;
+		private int sessionId;
+		private LoginSession session;
+		private DisconProgress prog;
+
+		public LoginTask(Login context)
+		{
+			super(context);
+			profile = context.profile;
+			realm = context.realm;
+			sessionId = context.sessionId;
+		}
+		
+		@Override
+		public void connect(Login context)
+		{
+			super.connect(context);
+			if(prog != null) prog.connect(context);
+			context.profile = profile;
+			context.realm = realm;
+			context.sessionId = sessionId;
+		}
+
+		@Override
+		public void disconnect()
+		{
+			super.disconnect();
+			if(prog != null) prog.disconnect();
+		}
+		
+		static private class ProgCancelListener implements DisconDialog.OnCancelListener
+		{
+			public void onCancel(Context ctx, DialogInterface dialog)
+			{
+				if(ctx != null) ((SelectProfile)ctx).cancel();
+			}
+		}
+		
+		private LoginSession buildLoginSession(SignonMsgReq son, SignonMsgResp resp)
+		{
+			LoginSession req = new LoginSession();
+			req.profile = this.profile;
+			req.realm = this.realm;
+			req.userid = son.userid;
+			req.userpass = son.userpass;
+			req.userCred1 = son.userCred1;
+			req.userCred2 = son.userCred2;
+			req.authToken = son.authToken;
+			req.ID = this.sessionId;
+			req.sessionkey = resp.userKey;
+			req.sessionExpire = resp.tsKeyExpire;
+			req.sessionCookie = resp.sessCookie;
+			req.mfaAnswerKey = resp.accessKey;
+			req.sessionCookie = resp.sessCookie;
+			return req;
+		}
+
+		@Override
+		protected void onStart(Login context)
+		{
+			prog = new DisconProgress(context);
+			prog.setMessage(R.string.login_progress);
+			prog.setIndeterminate(false);
+			prog.setCancelable(true);
+			prog.setOnCancelListener(new ProgCancelListener());
+			prog.show();
+		}
+
+		@Override
+		public Integer run(SignonMsgReq... parm) throws Exception
+		{
+			SignonMsgReq son = parm[0];
+	
+			OfxRequest req = profile.newRequest();
+			req.addRequest(son);
+			req.addRequest(profile.newProfRequest(profile.profileIsUser));
+	
+			List<OfxMessageResp> response = req.submit(this);
+	
+			if(response != null)
+			{
+				for(OfxMessageResp resp : response)
+				{
+					if(resp instanceof SignonMsgResp)
+					{
+						session = buildLoginSession(son, (SignonMsgResp)resp);
+					}
+					else if(resp instanceof ProfileMsgResp)
+					{
+						profile.mergeProfileResponse(req.version, (ProfileMsgResp)resp, true);
+					}
+				}
+				if(session != null)
+				{
+					ProfileTable db = new ProfileTable(this);
+					try
+					{
+						db.openWritable();
+						db.pushSession(session);
+						this.sessionId = session.ID;
+					}
+					finally
+					{
+						db.close();
+					}
+				}
+			}
+		}
+
+		@Override
+		protected void onCompleted(Login context, Integer result)
+		{
+			prog.hide();
+			context.sessionId = sessionId;
+		}
+
+		private static class EmptyClickListener implements DialogInterface.OnClickListener
 		{
 			public void onClick(DialogInterface dialog, int which) { }
 		};
+		private EmptyClickListener emptyClickListener = new EmptyClickListener();
 
-		private void doAlert(Exception e, String msg)
+		private void doAlert(Context ctx, Exception e, String msg)
 		{
-			AlertDialog dlg = Utilities.buildAlert(Login.this, e, msg, "Login Error", emptyClickListener);
+			AlertDialog dlg = Utilities.buildAlert(ctx, e, msg, "Login Error", emptyClickListener);
 			dlg.show();
 		}
 
-		private void doRetryableAlert(Exception e, String msg)
+		private void doRetryableAlert(final Context ctx, Exception e, String msg)
 		{
-			AlertDialog.Builder dialog = new AlertDialog.Builder(Login.this);
+			AlertDialog.Builder dialog = new AlertDialog.Builder(ctx);
 			dialog.setTitle(msg);
 			String dispMsg = msg + "\n\n" + e.getMessage();
 			dialog.setMessage(dispMsg);
@@ -398,7 +524,7 @@ public class Login extends Activity implements Runnable
 			{
 				public void onClick(DialogInterface dialog, int which)
 				{
-					attemptLogin();
+					((Login)ctx).attemptLogin();
 				}
 			});
 			dialog.setNegativeButton("Cancel", emptyClickListener);
@@ -407,193 +533,89 @@ public class Login extends Activity implements Runnable
 			dlg.show();
 		}
 
-		public void handleMessage(Message msg)
+		@Override
+		protected void onError(Login context, Exception error)
 		{
-			super.handleMessage(msg);
-
-			try
+			if(error instanceof HttpResponseException)
 			{
-				prog.dismiss();
+				doAlert(context, error, OfxProfile.exceptionComment(error));
 			}
-			catch(IllegalArgumentException e)
-			{	// this may happen due to race conditions on activity shutdown?
-				e.printStackTrace();
-			}
-			switch(msg.what)
+			else if(error instanceof OfxError)
 			{
-			case QH_OK:
-				loginSuccessful();
-				break;
-			case QH_EMPTY:
-				doAlert(null, "Server gave an unexpected response (no signon acknowledgement?)");
-				break;
-			case QH_ERR_OFX:
+				OfxError e = (OfxError)error;
+				switch(e.getErrorCode())
 				{
-					OfxError e = (OfxError)msg.obj;
-		        	switch(e.getErrorCode())
-		        	{
-					//case StatusResponse.STATUS_ERROR: // General error (ERROR)
-					//case StatusResponse.STATUS_MFA_REQUIRED: // User credentials are correct, but further authentication required (ERROR)
-					//case StatusResponse.STATUS_MFA_INVALID: // MFACHALLENGEA contains invalid information (ERROR)
-		        	case StatusResponse.STATUS_FI_INVALID: // <FI> Missing or Invalid in <SONRQ> (ERROR)
-						doAlert(e, "Server is rejecting connection details (FI_ID or FI_ORG)");
+				//case StatusResponse.STATUS_ERROR: // General error (ERROR)
+				//case StatusResponse.STATUS_MFA_REQUIRED: // User credentials are correct, but further authentication required (ERROR)
+				//case StatusResponse.STATUS_MFA_INVALID: // MFACHALLENGEA contains invalid information (ERROR)
+				case StatusResponse.STATUS_FI_INVALID: // <FI> Missing or Invalid in <SONRQ> (ERROR)
+					doAlert(context, e, "Server is rejecting connection details (FI_ID or FI_ORG)");
+					break;
+				//case StatusResponse.STATUS_PINCH_NEEDED: // Must change USERPASS (INFO)
+				case StatusResponse.STATUS_BAD_LOGIN: // Signon invalid (see section 2.5.1) (ERROR)
+					doAlert(context, e, "User and/or password is incorrect");
+					break;
+				case StatusResponse.STATUS_ACCT_BUSY: // Customer account already in use (ERROR)
+					doAlert(context, e, "Your account is currently in use");
+					break;
+				case StatusResponse.STATUS_ACCT_LOCKED: // USERPASS Lockout (ERROR)
+					doAlert(context, e, "Your account has been locked");
+					break;
+				//case StatusResponse.STATUS_EMPTY_REQUEST: // Empty signon transaction not supported (ERROR)
+				//case StatusResponse.STATUS_PINCH_REQUIRED: // Signon invalid without supporting pin change request (ERROR)
+				//case StatusResponse.STATUS_CLIENTUID_REJECTED: // CLIENTUID error (ERROR)
+				case StatusResponse.STATUS_CALL_US: // User should contact financial institution (ERROR)
+					doAlert(context, e, "Please contact your financial institution");
+					break;
+				case StatusResponse.STATUS_AUTHTOKEN_REQUIRED: // OFX server requires AUTHTOKEN in signon during the next session (ERROR)
+					{
+						context.requireAuthToken = true;
+						context.buildView();
+						TextView tokenView = (TextView)context.findViewById(R.id.TokenPrompt);
+						tokenView.setVisibility(View.VISIBLE);
+						tokenView.setText(realm.authTokenLabel);
+						tokenView.setFocusableInTouchMode(true);
+						tokenView.requestFocus();
+						//tokenView.requestRectangleOnScreen(viewRectangle);
 						break;
-					//case StatusResponse.STATUS_PINCH_NEEDED: // Must change USERPASS (INFO)
-					case StatusResponse.STATUS_BAD_LOGIN: // Signon invalid (see section 2.5.1) (ERROR)
-						doAlert(e, "User and/or password is incorrect");
-						break;
-					case StatusResponse.STATUS_ACCT_BUSY: // Customer account already in use (ERROR)
-						doAlert(e, "Your account is currently in use");
-						break;
-					case StatusResponse.STATUS_ACCT_LOCKED: // USERPASS Lockout (ERROR)
-						doAlert(e, "Your account has been locked");
-						break;
-					//case StatusResponse.STATUS_EMPTY_REQUEST: // Empty signon transaction not supported (ERROR)
-					//case StatusResponse.STATUS_PINCH_REQUIRED: // Signon invalid without supporting pin change request (ERROR)
-					//case StatusResponse.STATUS_CLIENTUID_REJECTED: // CLIENTUID error (ERROR)
-					case StatusResponse.STATUS_CALL_US: // User should contact financial institution (ERROR)
-						doAlert(e, "Please contact your financial institution");
-						break;
-					case StatusResponse.STATUS_AUTHTOKEN_REQUIRED: // OFX server requires AUTHTOKEN in signon during the next session (ERROR)
-						{
-							requireAuthToken = true;
-							buildView();
-							TextView tokenView = (TextView)findViewById(R.id.TokenPrompt);
-							tokenView.setVisibility(View.VISIBLE);
-							tokenView.setText(realm.authTokenLabel);
-							tokenView.setFocusableInTouchMode(true);
-							tokenView.requestFocus();
-							//tokenView.requestRectangleOnScreen(viewRectangle);
-							break;
-						}
-					case StatusResponse.STATUS_AUTHTOKEN_INVALID:// AUTHTOKEN invalid (ERROR)
-						doAlert(e, "\"" + realm.authTokenLabel + "\" is invalid");
-						break;
-		        	default:
-						doAlert(e, "Server refused the login");
-						break;
-		        	}
+					}
+				case StatusResponse.STATUS_AUTHTOKEN_INVALID:// AUTHTOKEN invalid (ERROR)
+					doAlert(context, e, "\"" + realm.authTokenLabel + "\" is invalid");
+					break;
+				default:
+					doAlert(context, e, "Server refused the login");
+					break;
 				}
-				
-			case QH_ERR_HTTP:
-			case QH_ERR_TIMEOUT:
-			case QH_ERR_CONN:
-			case QH_ERR_SSL:
-				doRetryableAlert((Exception)msg.obj, "Unable to connect to server");
-				break;
-
-			default:
-				doAlert((Exception)msg.obj, OfxProfile.exceptionComment((Exception)msg.obj));
-				break;
+			}
+			else if(error instanceof XmlPullParserException ||
+					error instanceof SSLPeerUnverifiedException)
+			{
+				doAlert(context, error, OfxProfile.exceptionComment(error));
+			}
+			else if(error instanceof ClientProtocolException ||
+					error instanceof ConnectException ||
+					error instanceof SocketException || 
+					error instanceof SSLException)
+			{
+				doRetryableAlert(context, error, "Unable to connect to server");
+			}
+			else
+			{
+				doAlert(context, error, OfxProfile.exceptionComment(error));
 			}
 		}
-	};
-	
-	private void sendExceptionMsg(int what, Exception e)
-	{
-		e.printStackTrace();
-		Message msg = Message.obtain();
-		msg.obj = e;
-		msg.what = what;
-		queryHandler.sendMessage(msg);
-	}
 
-	public void run()
-	{
-		SignonMsgReq son = buildLoginRequest();
-		completeLoginRequest(son);
-
-		OfxRequest req = profile.newRequest();
-        req.addRequest(son);
-        req.addRequest(profile.newProfRequest(profile.profileIsUser));
-
-    	List<OfxMessageResp> response;
-        try {
-			response = req.submit(this);
-		} catch (HttpResponseException e) {
-			sendExceptionMsg(QH_ERR_STATUS, e);
-			return;
-		} catch (OfxError e) {
-			sendExceptionMsg(QH_ERR_OFX, e);
-			return;
-		} catch (XmlPullParserException e) {
-			sendExceptionMsg(QH_ERR_PARSE, e);
-			return;
-		} catch (SSLPeerUnverifiedException e) {
-			sendExceptionMsg(QH_ERR_SSL_VERIFY, e);
-			return;
-		} catch (ClientProtocolException e) {
-			sendExceptionMsg(QH_ERR_HTTP, e);
-			return;
-		} catch (ConnectException e) {
-			sendExceptionMsg(QH_ERR_TIMEOUT, e);
-			return;
-		} catch (SocketException e) {
-			sendExceptionMsg(QH_ERR_CONN, e);
-			return;
-		} catch (SSLException e) {
-			sendExceptionMsg(QH_ERR_SSL, e);
-			return;
-		} catch (Exception e) {
-			sendExceptionMsg(QH_ERR, e);
-			return;
-		}
-
-		LoginSession session = null;
-		if(response != null)
+		@Override
+		protected void onSuccess(Login context, Integer result)
 		{
-	    	for(OfxMessageResp resp : response)
-	    	{
-	    		if(resp instanceof SignonMsgResp)
-	    		{
-	    			session = buildLoginSession(son, (SignonMsgResp)resp);
-	    		}
-	    		else if(resp instanceof ProfileMsgResp)
-	    		{
-	    			profile.mergeProfileResponse(req.version, (ProfileMsgResp)resp, true);
-	    		}
-	    	}
-	    	if(session != null)
-	    	{
-	    		ProfileTable db = new ProfileTable(this);
-	    		try
-	    		{
-	    			db.openWritable();
-		    		db.pushSession(session);
-		    		this.sessionId = session.ID;
-	    		}
-	    		catch(SQLiteException e)
-	    		{
-	    			sendExceptionMsg(QH_ERR, e);
-	    			return;
-	    		}
-	    		finally
-	    		{
-	    			db.close();
-	    		}
-	    	}
+			if(session == null)
+			{
+				doAlert(context, null, "Server gave an unexpected response (no signon acknowledgement?)");
+			} else {
+				context.loginTask = null;
+				context.loginSuccessful();
+				disconnect();
+			}
 		}
-		
-		queryHandler.sendEmptyMessage(session == null ? QH_EMPTY : QH_OK);
-//	} catch (Throwable e) {
-//		// last chance handler
-//		e.printStackTrace();
-//		//throw(e);
-//	}
-	}
-
-	@Override
-	protected void onSaveInstanceState(Bundle outState)
-	{
-		super.onSaveInstanceState(outState);
-		outState.putInt("sessionId", this.sessionId);
-		outState.putBoolean("requireAuthToken", this.requireAuthToken);
-		outState.putString("userid", this.userid.toString());
-		outState.putString("userpass", this.userpass.toString());
-		outState.putString("userCred1", this.userCred1.toString());
-		outState.putString("userCred2", this.userCred2.toString());
-		outState.putString("authToken", this.authToken.toString());
-		outState.putString("sessionCookie", this.sessionCookie);
-		if(this.realm != null) outState.putString("realmName", this.realm.name);
 	}
 }

@@ -1,0 +1,18 @@
+activities:
+	prof/AddProfile
+
+	prof/EnterProfile
+	prof/SelectProfile (async)
+	prof/VerifyProfile (async)
+		prof/ForeignDefList - http client
+		prof/MoneydanceDefList - profiles from moneydance
+		prof/OfxHomeDefList - profiles from ofxhome.com
+		prof/OfxFiDefinition - profile object
+		prof/OfxFiDefTable - [db] profile object table
+
+	prof/RealmLogin
+	prof/Login (async)
+
+	prof/SelectAccount
+
+	acct/AccountList

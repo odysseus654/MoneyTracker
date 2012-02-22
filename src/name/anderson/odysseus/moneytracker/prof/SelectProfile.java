@@ -2,6 +2,9 @@ package name.anderson.odysseus.moneytracker.prof;
 
 import java.io.*;
 import java.util.List;
+
+import name.anderson.odysseus.moneytracker.DisconDialog;
+import name.anderson.odysseus.moneytracker.DisconProgress;
 import name.anderson.odysseus.moneytracker.R;
 import name.anderson.odysseus.moneytracker.Utilities;
 import android.app.*;
@@ -11,8 +14,9 @@ import android.database.sqlite.SQLiteException;
 import android.os.*;
 import android.view.View;
 import android.widget.*;
+import com.github.ignition.core.tasks.IgnitedAsyncTask;
 
-public class SelectProfile extends ListActivity implements Runnable
+public class SelectProfile extends ListActivity
 {
 	private static final String[] LIST_COL = { "name" };
 	private static final int[] LIST_IDS = { android.R.id.text1 };
@@ -20,8 +24,7 @@ public class SelectProfile extends ListActivity implements Runnable
 	private static final int SELECT_ACCOUNT = 1002;
 	private OfxFiDefTable db;
 	private String filterText;
-	ProgressDialog prog;
-	private Thread updateThread;
+	private DefRetrievalTask retrieveTask;
 	ForeignDefList[] deflistProviders;
 
 	@Override
@@ -35,13 +38,17 @@ public class SelectProfile extends ListActivity implements Runnable
 		db = new OfxFiDefTable(this);
 		deflistProviders = new ForeignDefList[] { new MoneydanceDefList(), new OfxHomeDefList() };
 		
-		try
+        // try to obtain a reference to a task piped through from the previous
+        // activity instance
+		retrieveTask = (DefRetrievalTask) getLastNonConfigurationInstance();
+		if(retrieveTask != null)
+		{
+			retrieveTask.connect(this);
+		}
+
+        try
 		{
 			db.openReadable();
-			if(db.requiresUpdate())
-			{
-				db.openWritable();
-			}
 		}
 		catch(SQLiteException e)
 		{
@@ -63,8 +70,24 @@ public class SelectProfile extends ListActivity implements Runnable
 		}
 	}
 	
-	void cancel()
+    @Override
+    public Object onRetainNonConfigurationInstance()
+    {
+        // we leverage this method to "tunnel" the task object through to the next
+        // incarnation of this activity in case of a configuration change
+        return retrieveTask;
+    }
+
+    void cancel()
 	{
+    	if(retrieveTask != null)
+    	{
+    		retrieveTask.cancel(true);
+    		try {
+				retrieveTask.get();
+			} catch (Exception e) {}
+    		retrieveTask = null;
+    	}
 		setResult(RESULT_CANCELED);
 		finish();
 	}
@@ -131,18 +154,8 @@ public class SelectProfile extends ListActivity implements Runnable
 
 	private void beginUpdate()
 	{
-		prog = ProgressDialog.show(this, null, getString(R.string.download_progress),
-				false, true, new DialogInterface.OnCancelListener()
-		{
-			public void onCancel(DialogInterface dialog)
-			{
-				cancel();
-			}
-		});
-		
-		updateThread = new Thread(this, "Download Thread");
-		updateThread.setDaemon(true);
-		updateThread.start();
+		retrieveTask = new DefRetrievalTask(this);
+		retrieveTask.execute(deflistProviders);
 	}
 
 	private void buildView()
@@ -193,11 +206,10 @@ public class SelectProfile extends ListActivity implements Runnable
 	@Override
 	protected void onDestroy()
 	{
-		if(updateThread != null)
+		if(retrieveTask != null)
 		{
-			Thread deadThread = updateThread;
-			updateThread = null;
-			deadThread.interrupt();
+			retrieveTask.disconnect();
+			retrieveTask = null;
 		}
 		if(db != null)
 		{
@@ -208,27 +220,33 @@ public class SelectProfile extends ListActivity implements Runnable
 		super.onDestroy();
 	}
 
-	private Handler errHandler = new Handler()
+	private static class ErrorHandler extends Handler
 	{
+		private SelectProfile context;
+		public static final int STATE_RETRIEVE = 1;
+		public static final int STATE_PARSE = 2;
+		public static final int STATE_SYNC = 3;
+		
+		public ErrorHandler(SelectProfile context)
+		{
+			this.context = context;
+		}
+		
 		public void handleMessage(Message msg)
 		{
 			super.handleMessage(msg);
-			if(msg.what == 0)
-			{
-				buildView();
-			}
-			else if(msg.obj != null)
+			if(msg.obj != null)
 			{
 				String strMsg = null;
 				switch(msg.what)
 				{
-				case 1:
+				case STATE_RETRIEVE:
 					strMsg = "Unable to retrieve ";
 					break;
-				case 2:
+				case STATE_PARSE:
 					strMsg = "Unable to handle response from ";
 					break;
-				case 3:
+				case STATE_SYNC:
 					strMsg = "Unable to store response from ";
 				}
 				if(strMsg != null)
@@ -237,71 +255,143 @@ public class SelectProfile extends ListActivity implements Runnable
 					ForeignDefList fgnDefList = (ForeignDefList)msgList[0];
 					Exception e = (Exception)msgList[1];
 					strMsg = strMsg + fgnDefList.name();
-					AlertDialog dlg = Utilities.buildAlert(SelectProfile.this, e, strMsg, "Download Error", null);
+					AlertDialog dlg = Utilities.buildAlert(context, e, strMsg, "Download Error", null);
 					dlg.show();
 				}
 			}
 		}
 	};
 
-	public void run()
+	private static class DefRetrievalTask
+		extends IgnitedAsyncTask<SelectProfile, ForeignDefList, Integer, Integer>
 	{
-//		try {
+		private ErrorHandler errHandler;
+		private OfxFiDefTable db;
+		private DisconProgress prog;
+		
+		public DefRetrievalTask(final SelectProfile context)
+		{
+			super(context);
+			db = new OfxFiDefTable(context);
+			try
+			{
+				db.openWritable();
+			}
+			catch(SQLiteException e)
+			{
+				AlertDialog dlg = Utilities.buildAlert(context, e, "Unable to open profile store", "Internal Error", new DialogInterface.OnClickListener()
+				{
+					public void onClick(DialogInterface dialog, int which)
+					{
+						context.cancel();
+					}
+				});
+				dlg.show();
+				db = null;
+			}
+		}
+		
+		@Override
+		public void connect(SelectProfile context)
+		{
+			super.connect(context);
+			if(prog != null) prog.connect(context);
+			this.errHandler = new ErrorHandler(context);
+			db = new OfxFiDefTable(context);
+			db.openWritable();
+	    }
+
+		@Override
+	    public void disconnect()
+		{
+			super.disconnect();
+			if(prog != null) prog.disconnect();
+			this.errHandler = null;
+	    }
+		
+		static private class ProgCancelListener implements DisconDialog.OnCancelListener
+		{
+			public void onCancel(Context ctx, DialogInterface dialog)
+			{
+				if(ctx != null) ((SelectProfile)ctx).cancel();
+			}
+		}
+	    
+	    @Override
+	    protected void onStart(SelectProfile context)
+	    {
+	    	prog = new DisconProgress(context);
+	    	prog.setMessage(R.string.download_progress);
+	    	prog.setIndeterminate(false);
+	    	prog.setCancelable(true);
+	    	prog.setOnCancelListener(new ProgCancelListener());
+	    	prog.show();
+	    }
+
+	    @Override
+		public Integer run(ForeignDefList... deflistProviders)
+		{
 			for(ForeignDefList entry : deflistProviders)
 			{
 				syncForeignDefList(entry);
 			}
-			errHandler.sendEmptyMessage(0);
-			try {
-				prog.dismiss();
-			}
-			catch(IllegalArgumentException e)
-			{	// this may happen due to race conditions on activity shutdown?
-				e.printStackTrace();
-			}
-//		} catch (Throwable e) {
-//			// last chance handler
-//			e.printStackTrace();
-//			//throw(e);
-//		}
-	}
-	
-	private void syncForeignDefList(ForeignDefList fgnDefList)
-	{
-		Reader r;
-		try {
-			r = fgnDefList.retrieveDefList();
-		} catch (Exception e) {
-			Message msg = Message.obtain();
-			msg.obj = new Object[] { fgnDefList, e };
-			msg.what = 1;
-			errHandler.sendMessage(msg);
-			return;
+			return 0;
 		}
-		try {
-			List<OfxFiDefinition> defList;
-		    try {
-				defList = fgnDefList.parseDefList(r);
+		
+        @Override
+        protected void onCompleted(SelectProfile context, Integer result)
+        {
+			prog.hide();
+        }
+
+        @Override
+        protected void onSuccess(SelectProfile context, Integer result)
+        {
+			context.buildView();
+        }
+
+        private void syncForeignDefList(ForeignDefList fgnDefList)
+		{
+			Reader r;
+			try {
+				r = fgnDefList.retrieveDefList();
 			} catch (Exception e) {
+				if(isCancelled()) return;
 				Message msg = Message.obtain();
 				msg.obj = new Object[] { fgnDefList, e };
-				msg.what = 2;
+				msg.what = ErrorHandler.STATE_RETRIEVE;
 				errHandler.sendMessage(msg);
 				return;
 			}
+			if(isCancelled()) return;
 			try {
-				fgnDefList.sync(defList, db);
-			} catch (Exception e) {
-				Message msg = Message.obtain();
-				msg.obj = new Object[] { fgnDefList, e };
-				msg.what = 3;
-				errHandler.sendMessage(msg);
-			}
-		} finally {
-			try {
-				r.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+				List<OfxFiDefinition> defList;
+			    try {
+					defList = fgnDefList.parseDefList(r);
+				} catch (Exception e) {
+					if(isCancelled()) return;
+					Message msg = Message.obtain();
+					msg.obj = new Object[] { fgnDefList, e };
+					msg.what = ErrorHandler.STATE_PARSE;
+					errHandler.sendMessage(msg);
+					return;
+				}
+				if(isCancelled()) return;
+				try {
+					fgnDefList.sync(defList, db);
+				} catch (Exception e) {
+					if(isCancelled()) return;
+					Message msg = Message.obtain();
+					msg.obj = new Object[] { fgnDefList, e };
+					msg.what = ErrorHandler.STATE_SYNC;
+					errHandler.sendMessage(msg);
+				}
+			} finally {
+				try {
+					r.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
